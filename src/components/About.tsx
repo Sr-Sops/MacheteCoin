@@ -115,7 +115,7 @@ export default function About() {
             grid-template-columns: 0.9fr 1.1fr !important;
           }
           .about-features {
-            grid-template-columns: 1fr 1fr !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
           }
         }
       `}</style>
