@@ -15,13 +15,30 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- Asegurar que las columnas existen si la tabla profiles ya fue creada previamente
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wallet_address TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS machete_balance NUMERIC(20, 2) DEFAULT 0.00;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
+
+-- Agregar constraint de roles si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'profiles_role_check'
+    ) THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('user', 'admin'));
+    END IF;
+END $$;
+
 -- Enable RLS for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by everyone" 
 ON public.profiles FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" 
 ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
@@ -46,9 +63,11 @@ CREATE TABLE IF NOT EXISTS public.coin_settings (
 ALTER TABLE public.coin_settings ENABLE ROW LEVEL SECURITY;
 
 -- Coin Settings Policies
+DROP POLICY IF EXISTS "Coin settings are viewable by everyone" ON public.coin_settings;
 CREATE POLICY "Coin settings are viewable by everyone" 
 ON public.coin_settings FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Only admins can update coin settings" ON public.coin_settings;
 CREATE POLICY "Only admins can update coin settings" 
 ON public.coin_settings FOR UPDATE USING (
     EXISTS (
@@ -77,9 +96,11 @@ CREATE TABLE IF NOT EXISTS public.roadmap_phases (
 ALTER TABLE public.roadmap_phases ENABLE ROW LEVEL SECURITY;
 
 -- Roadmap Policies
+DROP POLICY IF EXISTS "Roadmap is viewable by everyone" ON public.roadmap_phases;
 CREATE POLICY "Roadmap is viewable by everyone" 
 ON public.roadmap_phases FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Only admins can modify roadmap" ON public.roadmap_phases;
 CREATE POLICY "Only admins can modify roadmap" 
 ON public.roadmap_phases FOR ALL USING (
     EXISTS (
@@ -110,12 +131,15 @@ CREATE TABLE IF NOT EXISTS public.swaps (
 ALTER TABLE public.swaps ENABLE ROW LEVEL SECURITY;
 
 -- Swaps Policies
+DROP POLICY IF EXISTS "Users can view their own swaps" ON public.swaps;
 CREATE POLICY "Users can view their own swaps" 
 ON public.swaps FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own swaps" ON public.swaps;
 CREATE POLICY "Users can insert their own swaps" 
 ON public.swaps FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all swaps" ON public.swaps;
 CREATE POLICY "Admins can view all swaps" 
 ON public.swaps FOR SELECT USING (
     EXISTS (
@@ -134,7 +158,7 @@ BEGIN
     COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
     new.raw_user_meta_data->>'avatar_url',
     CASE 
-      WHEN new.email = 'admin@machetecoin.com' THEN 'admin' -- Default admin credentials helper
+      WHEN new.email = 'sops1o6@gmail.com' THEN 'admin' -- Default admin credentials helper
       ELSE 'user'
     END
   );
@@ -142,6 +166,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Promover al correo del administrador real a rol 'admin' de forma inmediata si ya existe
+UPDATE public.profiles 
+SET role = 'admin' 
+WHERE id IN (
+    SELECT id FROM auth.users 
+    WHERE email = 'sops1o6@gmail.com'
+);

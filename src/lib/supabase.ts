@@ -202,7 +202,8 @@ export const MacheteService = {
         return { success: false, error: 'El nombre de usuario ya está registrado.' };
       }
       
-      const isFirstAdmin = email === 'admin@machetecoin.com';
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@machetecoin.com';
+      const isFirstAdmin = email.toLowerCase() === adminEmail.toLowerCase();
       const newProfile: Profile = {
         id: Math.random().toString(36).substr(2, 9),
         username,
@@ -233,7 +234,8 @@ export const MacheteService = {
     } else {
       // Mock SignIn
       const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
-      const isFirstAdmin = email === 'admin@machetecoin.com';
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@machetecoin.com';
+      const isFirstAdmin = email.toLowerCase() === adminEmail.toLowerCase();
       let user = profiles.find((p) => (isFirstAdmin && p.role === 'admin') || p.username.toLowerCase() === email.toLowerCase());
       
       if (!user) {

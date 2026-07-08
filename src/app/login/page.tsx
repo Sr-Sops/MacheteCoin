@@ -14,6 +14,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isMock, setIsMock] = useState(false);
 
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@machetecoin.com';
+
   useEffect(() => {
     // Detect mock state
     MacheteService.init();
@@ -134,7 +136,7 @@ export default function Login() {
             <Info size={16} style={{ color: 'var(--color-gold)', flexShrink: 0, marginTop: '0.1rem' }} />
             <div>
               <strong>Modo Simulado:</strong> Puedes entrar con cualquier email. 
-              Usa <span style={{ color: 'var(--color-gold)', fontWeight: 'bold' }}>admin@machetecoin.com</span> para probar el <strong>Panel de Administrador</strong>.
+              Usa <span style={{ color: 'var(--color-gold)', fontWeight: 'bold' }}>{adminEmail}</span> para probar el <strong>Panel de Administrador</strong>.
             </div>
           </div>
         )}
