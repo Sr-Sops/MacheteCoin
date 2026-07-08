@@ -64,6 +64,15 @@ export default function Footer({ twitterUrl, telegramUrl, discordUrl }: FooterPr
             </div>
           </div>
 
+          {/* Legal Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h4 style={{ color: 'var(--color-gold)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Legal</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              <Link href="/terms" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'color 0.2s' }} className="footer-link">Términos y Condiciones</Link>
+              <Link href="/privacy" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'color 0.2s' }} className="footer-link">Política de Privacidad</Link>
+            </div>
+          </div>
+
           {/* Social Links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h4 style={{ color: 'var(--color-gold)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Redes Sociales</h4>
@@ -111,7 +120,7 @@ export default function Footer({ twitterUrl, telegramUrl, discordUrl }: FooterPr
         }
         @media (min-width: 768px) {
           .footer-grid {
-            grid-template-columns: 2fr 1fr 1fr !important;
+            grid-template-columns: 2fr 1fr 1fr 1fr !important;
           }
         }
         .footer-link:hover {
