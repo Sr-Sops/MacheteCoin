@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService } from '@/lib/supabase';
-import { ArrowLeft, User, Mail, UserPlus, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, UserPlus, Loader2, Info } from 'lucide-react';
 
 export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isMock, setIsMock] = useState(false);
@@ -22,13 +23,13 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !username) return;
+    if (!email || !username || !password) return;
 
     setError('');
     setLoading(true);
 
     try {
-      const res = await MacheteService.signUp(email, username);
+      const res = await MacheteService.signUp(email, username, password);
       if (res.success) {
         // Successful signup, redirect to dashboard
         router.push('/dashboard');
@@ -177,6 +178,40 @@ export default function Register() {
                 placeholder="ejemplo@machetecoin.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem',
+                  width: '100%',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Password Input */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <label htmlFor="password" style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+              Contraseña
+            </label>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: '10px',
+              padding: '0.75rem 1rem',
+              gap: '0.75rem',
+            }}>
+              <Lock size={18} style={{ color: 'var(--text-secondary)' }} />
+              <input 
+                type="password" 
+                id="password"
+                required
+                placeholder="Mínimo 6 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 style={{
                   background: 'transparent',
                   border: 'none',
