@@ -111,10 +111,15 @@ ON public.roadmap_phases FOR ALL USING (
 
 -- Insert default roadmap phases
 INSERT INTO public.roadmap_phases (phase_number, title, description, status, items) VALUES
-(1, 'Fase 1: La Forja del Machete', 'Desarrollo del concepto, diseño visual, creación del contrato y lanzamiento del sitio web oficial.', 'in_progress', ARRAY['Diseño del logo oficial', 'Desarrollo de la landing page', 'Lanzamiento del contrato inteligente (Solana)', 'Apertura de redes sociales (Telegram, Twitter)']),
-(2, 'Fase 2: Cortando la Maleza', 'Campañas de marketing viral, listados de comunidades y swaps descentralizados iniciales.', 'pending', ARRAY['Auditoría del contrato', 'Listado en Raydium DEX', 'Campaña de marketing con influencers de memes', '10,000 Holders activos']),
+(1, 'Fase 1: La Forja del Machete', 'Desarrollo del concepto, diseño visual, creación del contrato y lanzamiento del sitio web oficial.', 'completed', ARRAY['Diseño del logo oficial', 'Desarrollo de la landing page', 'Lanzamiento del contrato inteligente (Solana)', 'Apertura de redes sociales (Telegram, Twitter)']),
+(2, 'Fase 2: Cortando la Maleza', 'Campañas de marketing viral, listados de comunidades y swaps descentralizados iniciales.', 'in_progress', ARRAY['Auditoría del contrato', 'Listado en Raydium DEX', 'Campaña de marketing con influencers de memes', '10,000 Holders activos']),
 (3, 'Fase 3: Dominación de la Selva', 'Listado en exchanges centralizados (CEX), lanzamiento del juego web/móvil Machete, y dominación global de memes.', 'pending', ARRAY['Listados en CoinGecko y CoinMarketCap', 'Lanzamiento de la aplicación móvil MacheteCoin', 'Integración del sistema de staking', 'CEX listings principales (Binance/Bybit)'])
 ON CONFLICT (phase_number) DO NOTHING;
+
+-- Forzar la actualización del estado de las fases a su valor inicial correcto
+UPDATE public.roadmap_phases SET status = 'completed' WHERE phase_number = 1;
+UPDATE public.roadmap_phases SET status = 'in_progress' WHERE phase_number = 2;
+UPDATE public.roadmap_phases SET status = 'pending' WHERE phase_number = 3;
 
 -- 4. Swaps Table (Transaction History)
 CREATE TABLE IF NOT EXISTS public.swaps (

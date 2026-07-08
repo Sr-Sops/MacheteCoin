@@ -108,7 +108,7 @@ const initMockDB = () => {
         phase_number: 1,
         title: 'Fase 1: La Forja del Machete',
         description: 'Desarrollo del concepto, diseño visual, creación del contrato y lanzamiento del sitio web oficial.',
-        status: 'in_progress',
+        status: 'completed',
         items: [
           'Diseño del logo oficial',
           'Desarrollo de la landing page',
@@ -122,7 +122,7 @@ const initMockDB = () => {
         phase_number: 2,
         title: 'Fase 2: Cortando la Maleza',
         description: 'Campañas de marketing viral, listados de comunidades y swaps descentralizados iniciales.',
-        status: 'pending',
+        status: 'in_progress',
         items: [
           'Auditoría del contrato',
           'Listado en Raydium DEX',
@@ -183,12 +183,12 @@ export const MacheteService = {
   },
 
   // 1. Auth Methods
-  signUp: async (email: string, username: string) => {
+  signUp: async (email: string, username: string, password?: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
       const { data, error } = await supabaseClient.auth.signUp({
         email,
-        password: 'machete-default-pass-change-me', // For simplicity in this demo, real auth handles standard password inputs
+        password: password || 'machete-default-pass-change-me',
         options: {
           data: { username },
         },
@@ -221,13 +221,13 @@ export const MacheteService = {
     }
   },
 
-  signIn: async (email: string) => {
+  signIn: async (email: string, password?: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
       // Direct sign in link or mock credentials
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
-        password: 'machete-default-pass-change-me',
+        password: password || 'machete-default-pass-change-me',
       });
       if (error) return { success: false, error: error.message };
       return { success: true, user: data.user };
