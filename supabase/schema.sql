@@ -186,3 +186,57 @@ WHERE id IN (
     SELECT id FROM auth.users 
     WHERE email = 'sops1o6@gmail.com'
 );
+
+-- ==========================================
+-- SCRIPT DE CREACIÓN AUTOMÁTICA DEL ADMINISTRADOR
+-- ==========================================
+-- Habilitar pgcrypto para encriptación de contraseña (bcrypt)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Insertar el usuario administrador ya confirmado en auth.users
+-- Email: sops1o6@gmail.com
+-- Contraseña: Machete@Coin26BS (encriptada con bcrypt)
+-- Nombre de usuario: sopsdev
+INSERT INTO auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  confirmed_at,
+  is_sso_user
+)
+VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'd3b07384-d113-41e8-a83d-e4c13a0c5f21', -- UUID fijo para el administrador
+  'authenticated',
+  'authenticated',
+  'sops1o6@gmail.com',
+  crypt('Machete@Coin26BS', gen_salt('bf', 10)), -- Genera hash bcrypt compatible con Supabase Auth
+  NOW(), -- Confirmación de email
+  '{"provider":"email","providers":["email"]}',
+  '{"username":"sopsdev"}',
+  NOW(),
+  NOW(),
+  NOW(),
+  false
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Asegurar la existencia del perfil administrador en public.profiles con rol admin y saldo inicial
+INSERT INTO public.profiles (id, username, role, machete_balance)
+VALUES (
+  'd3b07384-d113-41e8-a83d-e4c13a0c5f21', 
+  'sopsdev', 
+  'admin', 
+  1000000.0
+)
+ON CONFLICT (id) DO UPDATE
+SET role = 'admin',
+    username = 'sopsdev';
