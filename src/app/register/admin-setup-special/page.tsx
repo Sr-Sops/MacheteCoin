@@ -69,6 +69,7 @@ export default function AdminSetup() {
 
       console.log("Supabase URL client-side:", process.env.NEXT_PUBLIC_SUPABASE_URL);
       console.log("MacheteService.signUp response object:", res);
+      console.log("MacheteService.signUp response JSON:", JSON.stringify(res));
 
       if (res.success) {
         // Successful signup, redirect directly to admin panel!
@@ -77,6 +78,7 @@ export default function AdminSetup() {
       } else {
         const errMsg = getErrorMessage((res as any).error);
         console.error("SignUp failed with error:", (res as any).error, "Parsed message:", errMsg);
+        console.error("SignUp failed with error JSON:", JSON.stringify((res as any).error));
         setError(errMsg || 'Ocurrió un error al registrar el Administrador.');
       }
     } catch (err: any) {

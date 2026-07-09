@@ -238,7 +238,11 @@ export const MacheteService = {
             },
           },
         });
-        if (error) return { success: false, error: error.message };
+        if (error) {
+          console.error("Supabase signUp raw error object:", error);
+          console.error("Supabase signUp raw error JSON:", JSON.stringify(error));
+          return { success: false, error: error.message || JSON.stringify(error) || 'Error de registro' };
+        }
         return { success: true, user: data.user };
       } catch (err: any) {
         console.error("SignUp exception:", err);
@@ -287,7 +291,11 @@ export const MacheteService = {
           email,
           password: password || 'machete-default-pass-change-me',
         });
-        if (error) return { success: false, error: error.message };
+        if (error) {
+          console.error("Supabase signIn raw error object:", error);
+          console.error("Supabase signIn raw error JSON:", JSON.stringify(error));
+          return { success: false, error: error.message || JSON.stringify(error) || 'Error de inicio de sesión' };
+        }
         return { success: true, user: data.user };
       } catch (err: any) {
         console.error("SignIn exception:", err);
