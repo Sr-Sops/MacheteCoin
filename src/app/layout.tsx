@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://machete-coin.vercel.app'),
   title: "MacheteCoin ($MACHETE) - La Memecoin Más Afilada de la Jungla Cripto",
   description: "Únete al carpincho de MacheteCoin y ábrete paso en el mercado cripto. 0% de impuestos, liquidez quemada y pura diversión descentralizada.",
-  keywords: ["MacheteCoin", "Meme coin", "Solana", "Crypto", "Carpincho", "Jungle", "Blockchain", "DEX"],
+  keywords: ["MacheteCoin", "Meme coin", "Polygon", "Crypto", "Carpincho", "Jungle", "Blockchain", "DEX"],
   authors: [{ name: "MacheteCoin Team" }],
   openGraph: {
     title: "MacheteCoin ($MACHETE) - La Memecoin Más Afilada",
     description: "Corta la maleza cripto con el carpincho de MacheteCoin. 0% Impuestos.",
-    images: [{ url: "/logo-pagina.jpg", width: 800, height: 800, alt: "MacheteCoin Banner" }],
+    images: [{ url: "/logo-pagina.png", width: 800, height: 800, alt: "MacheteCoin Banner" }],
   },
 };
 

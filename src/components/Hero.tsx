@@ -174,7 +174,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
             zIndex: 2,
           }}>
             <Image 
-              src="/logo-pagina.jpg" 
+              src="/logo-pagina.png" 
               alt="MacheteCoin Carpincho con Machete" 
               fill
               style={{ objectFit: 'cover' }}

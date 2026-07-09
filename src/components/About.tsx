@@ -39,7 +39,7 @@ export default function About() {
               boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
             }}>
               <Image 
-                src="/logo-pagina.jpg" 
+                src="/logo-pagina.png" 
                 alt="Carpincho Machetero en la Jungla" 
                 fill
                 style={{ objectFit: 'cover', borderRadius: '14px' }}
