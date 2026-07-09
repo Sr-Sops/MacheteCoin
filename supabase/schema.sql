@@ -45,8 +45,8 @@ ON public.profiles FOR UPDATE USING (auth.uid() = id);
 -- 2. Coin Settings Table (Editable via Admin Panel)
 CREATE TABLE IF NOT EXISTS public.coin_settings (
     id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1), -- Single row configuration
-    contract_address TEXT DEFAULT 'MachETeX1234567890123456789012345678901234',
-    blockchain_network TEXT DEFAULT 'Solana',
+    contract_address TEXT DEFAULT '0x0000000000000000000000000000000000000000',
+    blockchain_network TEXT DEFAULT 'Polygon',
     total_supply TEXT DEFAULT '1,000,000,000',
     tax_buy NUMERIC(5, 2) DEFAULT 0.00,
     tax_sell NUMERIC(5, 2) DEFAULT 0.00,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.coin_settings (
     telegram_url TEXT DEFAULT 'https://t.me/MacheteCoin',
     discord_url TEXT DEFAULT 'https://discord.gg/MacheteCoin',
     dexscreener_url TEXT DEFAULT 'https://dexscreener.com/',
-    raydium_url TEXT DEFAULT 'https://raydium.io/',
+    raydium_url TEXT DEFAULT 'https://quickswap.exchange/',
     swap_rate NUMERIC(20, 2) DEFAULT 1000000.00, -- 1 SOL/USDT = 1,000,000 $MACHETE
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -111,8 +111,8 @@ ON public.roadmap_phases FOR ALL USING (
 
 -- Insert default roadmap phases
 INSERT INTO public.roadmap_phases (phase_number, title, description, status, items) VALUES
-(1, 'Fase 1: La Forja del Machete', 'Desarrollo del concepto, diseño visual, creación del contrato y lanzamiento del sitio web oficial.', 'completed', ARRAY['Diseño del logo oficial', 'Desarrollo de la landing page', 'Lanzamiento del contrato inteligente (Solana)', 'Apertura de redes sociales (Telegram, Twitter)']),
-(2, 'Fase 2: Cortando la Maleza', 'Campañas de marketing viral, listados de comunidades y swaps descentralizados iniciales.', 'in_progress', ARRAY['Auditoría del contrato', 'Listado en Raydium DEX', 'Campaña de marketing con influencers de memes', '10,000 Holders activos']),
+(1, 'Fase 1: La Forja del Machete', 'Desarrollo del concepto, diseño visual, creación del contrato y lanzamiento del sitio web oficial.', 'completed', ARRAY['Diseño del logo oficial', 'Desarrollo de la landing page', 'Lanzamiento del contrato inteligente (Polygon)', 'Apertura de redes sociales (Telegram, Twitter)']),
+(2, 'Fase 2: Cortando la Maleza', 'Campañas de marketing viral, listados de comunidades y swaps descentralizados iniciales.', 'in_progress', ARRAY['Auditoría del contrato', 'Listado en QuickSwap DEX', 'Campaña de marketing con influencers de memes', '10,000 Holders activos']),
 (3, 'Fase 3: Dominación de la Selva', 'Listado en exchanges centralizados (CEX), lanzamiento del juego web/móvil Machete, y dominación global de memes.', 'pending', ARRAY['Listados en CoinGecko y CoinMarketCap', 'Lanzamiento de la aplicación móvil MacheteCoin', 'Integración del sistema de staking', 'CEX listings principales (Binance/Bybit)'])
 ON CONFLICT (phase_number) DO NOTHING;
 

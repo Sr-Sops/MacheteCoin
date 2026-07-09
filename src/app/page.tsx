@@ -59,8 +59,8 @@ export default function Home() {
   // Safe fallback if settings failed to load
   const activeSettings = settings || {
     id: 1,
-    contract_address: 'MachETeX1234567890123456789012345678901234',
-    blockchain_network: 'Solana',
+    contract_address: '0x0000000000000000000000000000000000000000',
+    blockchain_network: 'Polygon',
     total_supply: '1,000,000,000',
     tax_buy: 0.0,
     tax_sell: 0.0,
@@ -68,7 +68,7 @@ export default function Home() {
     telegram_url: 'https://t.me/MacheteCoin',
     discord_url: 'https://discord.gg/MacheteCoin',
     dexscreener_url: 'https://dexscreener.com/',
-    raydium_url: 'https://raydium.io/',
+    raydium_url: 'https://quickswap.exchange/',
     swap_rate: 1000000.0,
     updated_at: new Date().toISOString(),
   };

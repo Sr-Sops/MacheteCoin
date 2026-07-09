@@ -85,8 +85,8 @@ const initMockDB = () => {
   if (!localStorage.getItem(MOCK_STORAGE_KEYS.SETTINGS)) {
     const defaultSettings: CoinSettings = {
       id: 1,
-      contract_address: 'MachETeX1234567890123456789012345678901234',
-      blockchain_network: 'Solana',
+      contract_address: '0x0000000000000000000000000000000000000000',
+      blockchain_network: 'Polygon',
       total_supply: '1,000,000,000',
       tax_buy: 0.0,
       tax_sell: 0.0,
@@ -94,7 +94,7 @@ const initMockDB = () => {
       telegram_url: 'https://t.me/MacheteCoin',
       discord_url: 'https://discord.gg/MacheteCoin',
       dexscreener_url: 'https://dexscreener.com/',
-      raydium_url: 'https://raydium.io/',
+      raydium_url: 'https://quickswap.exchange/',
       swap_rate: 1000000.0,
       updated_at: new Date().toISOString(),
     };
@@ -112,7 +112,7 @@ const initMockDB = () => {
         items: [
           'Diseño del logo oficial',
           'Desarrollo de la landing page',
-          'Lanzamiento del contrato inteligente (Solana)',
+          'Lanzamiento del contrato inteligente (Polygon)',
           'Apertura de redes sociales (Telegram, Twitter)',
         ],
         created_at: new Date().toISOString(),
@@ -125,7 +125,7 @@ const initMockDB = () => {
         status: 'in_progress',
         items: [
           'Auditoría del contrato',
-          'Listado en Raydium DEX',
+          'Listado en QuickSwap DEX',
           'Campaña de marketing con influencers de memes',
           '10,000 Holders activos',
         ],

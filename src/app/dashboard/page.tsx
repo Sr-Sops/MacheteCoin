@@ -236,13 +236,13 @@ export default function Dashboard() {
               /* Unlinked state */
               <form onSubmit={handleLinkWallet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <p style={{ fontSize: '0.9rem' }}>
-                  Vincula tu clave pública de Solana (Phantom/Solflare) o Ethereum (Metamask) para asociarla a tu cuenta.
+                  Vincula tu clave pública de Polygon / Ethereum (MetaMask, Rabby, Trust Wallet) para asociarla a tu cuenta.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <input 
                     type="text" 
                     required
-                    placeholder="Pega tu clave pública (ej. MachETeX123...)"
+                    placeholder="Pega tu clave pública (ej. 0x1234...)"
                     value={walletInput}
                     onChange={(e) => setWalletInput(e.target.value)}
                     style={{

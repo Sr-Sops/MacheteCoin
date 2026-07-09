@@ -16,22 +16,22 @@ export default function HowToBuy({ contractAddress, blockchainNetwork, raydiumUr
     {
       title: 'Crear una Billetera',
       icon: <Wallet size={24} />,
-      desc: `Descarga una billetera compatible con la red ${blockchainNetwork}. Para Solana, recomendamos Phantom o Solflare de forma gratuita en tu App Store o como extensión de navegador.`,
+      desc: `Descarga una billetera compatible con la red ${blockchainNetwork}. Para Polygon, recomendamos MetaMask, Rabby o Coinbase Wallet de forma gratuita en tu App Store o como extensión de navegador.`,
     },
     {
       title: 'Conseguir Criptomonedas',
       icon: <Landmark size={24} />,
-      desc: `Compra SOL o USDC y envíalo a tu dirección de billetera recién creada. Puedes comprar cripto directamente dentro de la billetera o retirarlo desde exchanges como Binance, Coinbase, etc.`,
+      desc: `Compra MATIC o POL y envíalo a tu dirección de billetera recién creada. Puedes comprar cripto directamente dentro de la billetera o retirarlo desde exchanges como Binance, Coinbase, etc.`,
     },
     {
       title: 'Ir a un Exchange (DEX)',
       icon: <Shuffle size={24} />,
-      desc: `Entra en Raydium.io o Jupiter (jup.ag) utilizando el navegador integrado de tu billetera o conectando la extensión de navegador en tu ordenador. Conecta tu billetera haciendo clic en 'Connect Wallet'.`,
+      desc: `Entra en QuickSwap.exchange o Uniswap utilizando el navegador integrado de tu billetera o conectando la extensión de navegador en tu ordenador. Conecta tu billetera haciendo clic en 'Connect Wallet'.`,
     },
     {
       title: 'Intercambiar por $MACHETE',
       icon: <CheckCircle size={24} />,
-      desc: `Pega nuestra dirección de contrato oficial en el selector de tokens. Asegúrate de revisar que coincida exactamente con: ${contractAddress}. Ingresa la cantidad de SOL/USDC que deseas intercambiar y presiona 'Swap'.`,
+      desc: `Pega nuestra dirección de contrato oficial en el selector de tokens. Asegúrate de revisar que coincida exactamente con: ${contractAddress}. Ingresa la cantidad de MATIC o USDC que deseas intercambiar y presiona 'Swap'.`,
     },
   ];
 

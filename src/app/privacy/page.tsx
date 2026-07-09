@@ -60,7 +60,7 @@ export default function PrivacyPolicy() {
             </p>
             <ul style={{ paddingLeft: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.95rem', margin: '0.5rem 0' }}>
               <li><strong>Información de la Cuenta:</strong> Dirección de correo electrónico y nombre de usuario proporcionados durante el registro (gestionados de forma segura a través del servicio de autenticación Supabase Auth).</li>
-              <li><strong>Dirección de Billetera (Wallet):</strong> Clave pública criptográfica de Solana o Ethereum que decidas vincular de manera voluntaria a tu cuenta desde el panel de usuario.</li>
+              <li><strong>Dirección de Billetera (Wallet):</strong> Clave pública criptográfica de Polygon o Ethereum que decidas vincular de manera voluntaria a tu cuenta desde el panel de usuario.</li>
               <li><strong>Historial de Simulaciones:</strong> Datos asociados a los intercambios virtuales realizados dentro de nuestro widget de simulador Swap (monto pagado, token de pago, saldo acumulado y hashes de transacciones generados por el simulador).</li>
             </ul>
           </section>
