@@ -32,7 +32,7 @@ export default function Footer({ twitterUrl, telegramUrl, discordUrl }: FooterPr
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ position: 'relative', width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--color-gold)' }}>
                 <Image 
-                  src="/logo-oficial.jpg" 
+                  src="/logo-oficial.png" 
                   alt="MacheteCoin Logo" 
                   fill
                   style={{ objectFit: 'cover' }}

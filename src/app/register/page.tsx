@@ -95,7 +95,7 @@ export default function Register() {
         {/* Branding header */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ position: 'relative', width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--color-green-neon)' }}>
-            <Image src="/logo-oficial.jpg" alt="Logo" fill style={{ objectFit: 'cover' }} />
+            <Image src="/logo-oficial.png" alt="Logo" fill style={{ objectFit: 'cover' }} />
           </div>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }} className="gold-text-gradient">Registro de Usuario</h2>
