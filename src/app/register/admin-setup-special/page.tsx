@@ -67,12 +67,17 @@ export default function AdminSetup() {
         kycDocumentUrl: '/storage/kyc/admin-auto-approved.png',
       });
 
+      console.log("Supabase URL client-side:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log("MacheteService.signUp response object:", res);
+
       if (res.success) {
         // Successful signup, redirect directly to admin panel!
         router.push('/admin');
         router.refresh();
       } else {
-        setError(getErrorMessage((res as any).error) || 'Ocurrió un error al registrar el Administrador.');
+        const errMsg = getErrorMessage((res as any).error);
+        console.error("SignUp failed with error:", (res as any).error, "Parsed message:", errMsg);
+        setError(errMsg || 'Ocurrió un error al registrar el Administrador.');
       }
     } catch (err: any) {
       setError(getErrorMessage(err) || 'Error de conexión.');
