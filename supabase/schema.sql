@@ -76,10 +76,13 @@ ON public.coin_settings FOR UPDATE USING (
     )
 );
 
--- Insert default configurations if not exists
-INSERT INTO public.coin_settings (id) 
-VALUES (1) 
-ON CONFLICT (id) DO NOTHING;
+-- Insert default configurations if not exists or update if exists to force migration to Polygon
+INSERT INTO public.coin_settings (id, blockchain_network, contract_address, raydium_url) 
+VALUES (1, 'Polygon', '0x0000000000000000000000000000000000000000', 'https://quickswap.exchange/') 
+ON CONFLICT (id) DO UPDATE 
+SET blockchain_network = EXCLUDED.blockchain_network,
+    contract_address = EXCLUDED.contract_address,
+    raydium_url = EXCLUDED.raydium_url;
 
 -- 3. Roadmap Phases Table
 CREATE TABLE IF NOT EXISTS public.roadmap_phases (

@@ -82,6 +82,18 @@ const MOCK_STORAGE_KEYS = {
 const initMockDB = () => {
   if (typeof window === 'undefined') return;
 
+  // Migración automática: Si la base de datos simulada local está en Solana, la actualizamos a Polygon
+  const cachedSettings = localStorage.getItem(MOCK_STORAGE_KEYS.SETTINGS);
+  if (cachedSettings) {
+    try {
+      const parsed = JSON.parse(cachedSettings);
+      if (parsed.blockchain_network === 'Solana') {
+        localStorage.removeItem(MOCK_STORAGE_KEYS.SETTINGS);
+        localStorage.removeItem(MOCK_STORAGE_KEYS.ROADMAP);
+      }
+    } catch (e) {}
+  }
+
   if (!localStorage.getItem(MOCK_STORAGE_KEYS.SETTINGS)) {
     const defaultSettings: CoinSettings = {
       id: 1,
