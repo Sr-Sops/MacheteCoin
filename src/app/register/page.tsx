@@ -36,10 +36,12 @@ export default function Register() {
         router.push('/dashboard');
         router.refresh();
       } else {
-        setError(res.error || 'Ocurrió un error al registrarse.');
+        const errSource = (res as any).error;
+        const errStr = typeof errSource === 'object' ? errSource?.message || JSON.stringify(errSource) : errSource;
+        setError(errStr || 'Ocurrió un error al registrarse.');
       }
     } catch (err: any) {
-      setError(err?.message || 'Error de conexión.');
+      setError(err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err)) || 'Error de conexión.');
     } finally {
       setLoading(false);
     }
