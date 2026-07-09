@@ -64,55 +64,77 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
           </h1>
 
           <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-            Despeja tu camino financiero con **$MACHETE**. 0% de impuestos, liquidez quemada y la fuerza del carpincho más afilado de la red <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>{blockchainNetwork}</span>.
+            Despeja tu camino financiero con <strong style={{ color: 'var(--color-gold)' }}>$MACHETE</strong>. 0% de impuestos, liquidez quemada y la fuerza del carpincho más afilado de la red <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>{blockchainNetwork}</span>.
           </p>
 
           {/* Contract Address Panel */}
-          <div style={{
-            background: 'rgba(8, 17, 12, 0.85)',
-            border: '1px solid rgba(255, 199, 0, 0.2)',
-            borderRadius: '14px',
-            padding: '0.75rem 1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            maxWidth: '520px',
-            width: '100%',
-            margin: '0.5rem auto',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden', marginRight: '1rem' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em' }}>DIRECCIÓN DEL CONTRATO:</span>
-              <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
-                {contractAddress}
-              </span>
-            </div>
-            <button 
-              onClick={handleCopy}
-              className="btn"
-              style={{
-                background: copied ? 'var(--color-green-neon)' : 'rgba(255, 255, 255, 0.05)',
-                color: copied ? '#050a07' : 'var(--color-gold)',
-                padding: '0.5rem 1rem',
-                fontSize: '0.8rem',
-                borderRadius: '8px',
-                minWidth: '95px',
-                border: copied ? 'none' : '1px solid rgba(255, 199, 0, 0.3)',
-              }}
-            >
-              {copied ? (
-                <>
-                  <Check size={13} />
-                  Copiado!
-                </>
-              ) : (
-                <>
-                  <Copy size={13} />
-                  Copiar
-                </>
-              )}
-            </button>
-          </div>
+          {(() => {
+            const isAddressPlaceholder = 
+              !contractAddress || 
+              contractAddress.startsWith('MachETe') || 
+              contractAddress === '0x0000000000000000000000000000000000000000';
+            
+            return (
+              <div style={{
+                background: 'rgba(8, 17, 12, 0.85)',
+                border: '1px solid rgba(255, 199, 0, 0.2)',
+                borderRadius: '14px',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                maxWidth: '520px',
+                width: '100%',
+                margin: '0.5rem auto',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+              }}>
+                {isAddressPlaceholder ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0.25rem 0' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+                      DIRECCIÓN DEL CONTRATO:
+                    </span>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                      REVELÁNDOSE EN EL LANZAMIENTO 🚀
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden', marginRight: '1rem', width: '100%' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em' }}>DIRECCIÓN DEL CONTRATO:</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', textAlign: 'left' }}>
+                        {contractAddress}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={handleCopy}
+                      className="btn"
+                      style={{
+                        background: copied ? 'var(--color-green-neon)' : 'rgba(255, 255, 255, 0.05)',
+                        color: copied ? '#050a07' : 'var(--color-gold)',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        borderRadius: '8px',
+                        minWidth: '95px',
+                        border: copied ? 'none' : '1px solid rgba(255, 199, 0, 0.3)',
+                      }}
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={13} style={{ marginRight: '0.25rem' }} />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} style={{ marginRight: '0.25rem' }} />
+                          Copiar
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }} className="hero-buttons">

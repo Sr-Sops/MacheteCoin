@@ -12,6 +12,11 @@ interface HowToBuyProps {
 export default function HowToBuy({ contractAddress, blockchainNetwork, raydiumUrl }: HowToBuyProps) {
   const [activeStep, setActiveStep] = useState(0);
 
+  const isAddressPlaceholder = 
+    !contractAddress || 
+    contractAddress.startsWith('MachETe') || 
+    contractAddress === '0x0000000000000000000000000000000000000000';
+
   const steps = [
     {
       title: 'Crear una Billetera',
@@ -31,7 +36,9 @@ export default function HowToBuy({ contractAddress, blockchainNetwork, raydiumUr
     {
       title: 'Intercambiar por $MACHETE',
       icon: <CheckCircle size={24} />,
-      desc: `Pega nuestra dirección de contrato oficial en el selector de tokens. Asegúrate de revisar que coincida exactamente con: ${contractAddress}. Ingresa la cantidad de MATIC o USDC que deseas intercambiar y presiona 'Swap'.`,
+      desc: isAddressPlaceholder
+        ? `Pega nuestra dirección de contrato oficial en el selector de tokens (se revelará aquí en esta sección al momento del lanzamiento). Ingresa la cantidad de MATIC o USDC que deseas intercambiar y presiona 'Swap'.`
+        : `Pega nuestra dirección de contrato oficial en el selector de tokens. Asegúrate de revisar que coincida exactamente con: ${contractAddress}. Ingresa la cantidad de MATIC o USDC que deseas intercambiar y presiona 'Swap'.`,
     },
   ];
 
