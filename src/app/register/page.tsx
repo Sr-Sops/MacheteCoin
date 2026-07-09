@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService } from '@/lib/supabase';
-import { ArrowLeft, User, Mail, Lock, UserPlus, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, UserPlus, Loader2, Info } from 'lucide-react';
 
 export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isMock, setIsMock] = useState(false);
@@ -206,7 +207,7 @@ export default function Register() {
             }}>
               <Lock size={18} style={{ color: 'var(--text-secondary)' }} />
               <input 
-                type="password" 
+                type={showPassword ? 'text' : 'password'} 
                 id="password"
                 required
                 placeholder="Mínimo 6 caracteres"
@@ -221,6 +222,21 @@ export default function Register() {
                   width: '100%',
                 }}
               />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0,
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
