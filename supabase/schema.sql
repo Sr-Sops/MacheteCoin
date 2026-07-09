@@ -209,7 +209,6 @@ INSERT INTO auth.users (
   raw_user_meta_data,
   created_at,
   updated_at,
-  confirmed_at,
   is_sso_user
 )
 VALUES (
@@ -222,7 +221,6 @@ VALUES (
   NOW(), -- Confirmación de email
   '{"provider":"email","providers":["email"]}',
   '{"username":"sopsdev"}',
-  NOW(),
   NOW(),
   NOW(),
   false
