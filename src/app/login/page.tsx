@@ -27,9 +27,13 @@ export default function Login() {
   const getErrorMessage = (err: any): string => {
     if (!err) return '';
     if (typeof err === 'string') return err;
-    if (err instanceof Error) return err.message;
     if (typeof err === 'object') {
-      return err.message || err.error_description || err.error || JSON.stringify(err);
+      const msg = err.message || err.error_description || err.error;
+      if (msg) return typeof msg === 'string' ? msg : JSON.stringify(msg);
+      if (err.statusText) return err.statusText;
+      if (err.status) return `Error ${err.status}`;
+      const str = JSON.stringify(err);
+      if (str && str !== '{}') return str;
     }
     return String(err);
   };

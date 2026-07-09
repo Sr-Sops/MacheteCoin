@@ -198,15 +198,20 @@ export const MacheteService = {
   signUp: async (email: string, username: string, password?: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password: password || 'machete-default-pass-change-me',
-        options: {
-          data: { username },
-        },
-      });
-      if (error) return { success: false, error: error.message };
-      return { success: true, user: data.user };
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password: password || 'machete-default-pass-change-me',
+          options: {
+            data: { username },
+          },
+        });
+        if (error) return { success: false, error: error.message };
+        return { success: true, user: data.user };
+      } catch (err: any) {
+        console.error("SignUp exception:", err);
+        return { success: false, error: err?.message || String(err) };
+      }
     } else {
       // Mock SignUp
       const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
@@ -236,13 +241,18 @@ export const MacheteService = {
   signIn: async (email: string, password?: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
-      // Direct sign in link or mock credentials
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password: password || 'machete-default-pass-change-me',
-      });
-      if (error) return { success: false, error: error.message };
-      return { success: true, user: data.user };
+      try {
+        // Direct sign in link or mock credentials
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password: password || 'machete-default-pass-change-me',
+        });
+        if (error) return { success: false, error: error.message };
+        return { success: true, user: data.user };
+      } catch (err: any) {
+        console.error("SignIn exception:", err);
+        return { success: false, error: err?.message || String(err) };
+      }
     } else {
       // Mock SignIn
       const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
