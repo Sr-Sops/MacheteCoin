@@ -22,6 +22,16 @@ export default function Register() {
     setIsMock(MacheteService.isMock());
   }, []);
 
+  const getErrorMessage = (err: any): string => {
+    if (!err) return '';
+    if (typeof err === 'string') return err;
+    if (err instanceof Error) return err.message;
+    if (typeof err === 'object') {
+      return err.message || err.error_description || err.error || JSON.stringify(err);
+    }
+    return String(err);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !username || !password) return;
@@ -36,12 +46,10 @@ export default function Register() {
         router.push('/dashboard');
         router.refresh();
       } else {
-        const errSource = (res as any).error;
-        const errStr = typeof errSource === 'object' ? errSource?.message || JSON.stringify(errSource) : errSource;
-        setError(errStr || 'Ocurrió un error al registrarse.');
+        setError(getErrorMessage((res as any).error) || 'Ocurrió un error al registrarse.');
       }
     } catch (err: any) {
-      setError(err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err)) || 'Error de conexión.');
+      setError(getErrorMessage(err) || 'Error de conexión.');
     } finally {
       setLoading(false);
     }
