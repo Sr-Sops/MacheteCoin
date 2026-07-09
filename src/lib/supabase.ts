@@ -28,6 +28,14 @@ export interface Profile {
   wallet_address: string | null;
   machete_balance: number;
   role: 'user' | 'admin';
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  birth_date?: string;
+  document_id?: string;
+  kyc_status?: 'pending' | 'approved' | 'rejected';
+  kyc_document_url?: string | null;
+  terms_accepted?: boolean;
   created_at: string;
 }
 
@@ -195,7 +203,20 @@ export const MacheteService = {
   },
 
   // 1. Auth Methods
-  signUp: async (email: string, username: string, password?: string) => {
+  signUp: async (params: {
+    email: string;
+    username: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    birthDate?: string;
+    documentId?: string;
+    role?: 'user' | 'admin';
+    kycStatus?: 'pending' | 'approved' | 'rejected';
+    kycDocumentUrl?: string;
+  }) => {
+    const { email, username, password, firstName, lastName, phone, birthDate, documentId, role, kycStatus, kycDocumentUrl } = params;
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
       try {
@@ -203,7 +224,18 @@ export const MacheteService = {
           email,
           password: password || 'machete-default-pass-change-me',
           options: {
-            data: { username },
+            data: { 
+              username,
+              first_name: firstName,
+              last_name: lastName,
+              phone,
+              birth_date: birthDate,
+              document_id: documentId,
+              role: role || 'user',
+              kyc_status: kycStatus || 'pending',
+              kyc_document_url: kycDocumentUrl || null,
+              terms_accepted: true
+            },
           },
         });
         if (error) return { success: false, error: error.message };
@@ -220,14 +252,22 @@ export const MacheteService = {
       }
       
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@machetecoin.com';
-      const isFirstAdmin = email.toLowerCase() === adminEmail.toLowerCase();
+      const isFirstAdmin = email.toLowerCase() === adminEmail.toLowerCase() || role === 'admin';
       const newProfile: Profile = {
         id: Math.random().toString(36).substr(2, 9),
         username,
         avatar_url: null,
         wallet_address: null,
-        machete_balance: 0.00,
+        machete_balance: isFirstAdmin ? 10000000.00 : 0.00,
         role: isFirstAdmin ? 'admin' : 'user',
+        first_name: firstName || '',
+        last_name: lastName || '',
+        phone: phone || '',
+        birth_date: birthDate || '',
+        document_id: documentId || '',
+        kyc_status: isFirstAdmin ? 'approved' : (kycStatus || 'pending'),
+        kyc_document_url: kycDocumentUrl || null,
+        terms_accepted: true,
         created_at: new Date().toISOString(),
       };
 

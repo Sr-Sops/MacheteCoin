@@ -12,6 +12,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     wallet_address TEXT,
     machete_balance NUMERIC(20, 2) DEFAULT 0.00,
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    first_name TEXT DEFAULT '',
+    last_name TEXT DEFAULT '',
+    phone TEXT DEFAULT '',
+    birth_date DATE,
+    document_id TEXT DEFAULT '',
+    kyc_status TEXT DEFAULT 'pending' CHECK (kyc_status IN ('pending', 'approved', 'rejected')),
+    kyc_document_url TEXT,
+    terms_accepted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -19,6 +27,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wallet_address TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS machete_balance NUMERIC(20, 2) DEFAULT 0.00;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS first_name TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_name TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS document_id TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kyc_status TEXT DEFAULT 'pending';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kyc_document_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT FALSE;
 
 -- Agregar constraint de roles si no existe
 DO $$
@@ -27,6 +43,12 @@ BEGIN
         SELECT 1 FROM pg_constraint WHERE conname = 'profiles_role_check'
     ) THEN
         ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('user', 'admin'));
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'profiles_kyc_status_check'
+    ) THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_kyc_status_check CHECK (kyc_status IN ('pending', 'approved', 'rejected'));
     END IF;
 END $$;
 
@@ -160,15 +182,38 @@ ON public.swaps FOR SELECT USING (
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, avatar_url, role)
+  INSERT INTO public.profiles (
+    id, 
+    username, 
+    avatar_url, 
+    role,
+    first_name,
+    last_name,
+    phone,
+    birth_date,
+    document_id,
+    kyc_status,
+    kyc_document_url,
+    terms_accepted
+  )
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
     new.raw_user_meta_data->>'avatar_url',
-    CASE 
-      WHEN new.email = 'sops1o6@gmail.com' THEN 'admin' -- Default admin credentials helper
-      ELSE 'user'
-    END
+    COALESCE(new.raw_user_meta_data->>'role', 
+      CASE 
+        WHEN new.email = 'sops1o6@gmail.com' THEN 'admin'
+        ELSE 'user'
+      END
+    ),
+    COALESCE(new.raw_user_meta_data->>'first_name', ''),
+    COALESCE(new.raw_user_meta_data->>'last_name', ''),
+    COALESCE(new.raw_user_meta_data->>'phone', ''),
+    NULLIF(new.raw_user_meta_data->>'birth_date', '')::date,
+    COALESCE(new.raw_user_meta_data->>'document_id', ''),
+    COALESCE(new.raw_user_meta_data->>'kyc_status', 'pending'),
+    new.raw_user_meta_data->>'kyc_document_url',
+    COALESCE((new.raw_user_meta_data->>'terms_accepted')::boolean, false)
   );
   RETURN NEW;
 END;
