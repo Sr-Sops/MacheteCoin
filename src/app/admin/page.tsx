@@ -12,11 +12,16 @@ export default function AdminPanel() {
   const [user, setUser] = useState<Profile | null>(null);
   const [settings, setSettings] = useState<CoinSettings | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
-  const [activeTab, setActiveTab] = useState<'coin' | 'socials' | 'roadmap'>('coin');
+  const [activeTab, setActiveTab] = useState<'coin' | 'socials' | 'roadmap' | 'users'>('coin');
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Promotion states
+  const [promoteEmail, setPromoteEmail] = useState('');
+  const [promoteLoading, setPromoteLoading] = useState(false);
+  const [promoteError, setPromoteError] = useState('');
 
   // Form states
   const [contractAddress, setContractAddress] = useState('');
@@ -245,6 +250,22 @@ export default function AdminPanel() {
             <ListTodo size={16} style={{ marginRight: '0.25rem' }} />
             Gestión del Roadmap
           </button>
+
+          <button 
+            onClick={() => setActiveTab('users')}
+            className="btn"
+            style={{
+              background: activeTab === 'users' ? 'rgba(255, 199, 0, 0.1)' : 'transparent',
+              color: activeTab === 'users' ? 'var(--color-gold)' : 'var(--text-secondary)',
+              border: activeTab === 'users' ? '1px solid rgba(255, 199, 0, 0.3)' : 'none',
+              padding: '0.5rem 1rem',
+              fontSize: '0.9rem',
+              borderRadius: '8px',
+            }}
+          >
+            <Shield size={16} style={{ marginRight: '0.25rem' }} />
+            Gestión de Usuarios
+          </button>
         </div>
 
         {/* Tab Contents */}
@@ -455,6 +476,85 @@ export default function AdminPanel() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Tab 4: Users Promotion */}
+          {activeTab === 'users' && (
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.25rem', color: 'var(--color-gold)' }}>Promover otro Administrador</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                Introduce el correo electrónico de un usuario registrado en la base de datos para promover su rol a **Administrador (Admin)**. Este nuevo administrador tendrá acceso a todos los paneles y configuraciones del sitio.
+              </p>
+
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!promoteEmail) return;
+                  setPromoteLoading(true);
+                  setPromoteError('');
+                  try {
+                    const res = await MacheteService.promoteUserByEmail(promoteEmail);
+                    if (res.success) {
+                      showNotification(`¡Usuario ${promoteEmail} promovido a Administrador con éxito!`);
+                      setPromoteEmail('');
+                    } else {
+                      setPromoteError(res.error || 'Error al promover usuario.');
+                    }
+                  } catch (err: any) {
+                    setPromoteError(err?.message || String(err));
+                  } finally {
+                    setPromoteLoading(false);
+                  }
+                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '480px' }}
+              >
+                {promoteError && (
+                  <div style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    borderRadius: '8px',
+                    padding: '0.65rem 0.9rem',
+                    color: '#f87171',
+                    fontSize: '0.8rem',
+                  }}>
+                    {promoteError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="promoteEmail" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Correo Electrónico del Usuario
+                  </label>
+                  <input 
+                    type="email" 
+                    id="promoteEmail"
+                    required
+                    placeholder="usuario-a-promover@gmail.com"
+                    value={promoteEmail}
+                    onChange={(e) => setPromoteEmail(e.target.value)}
+                    style={{
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: '8px',
+                      padding: '0.7rem 1rem',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={promoteLoading || !promoteEmail}
+                  className="btn btn-gold"
+                  style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  {promoteLoading ? <Loader2 size={16} className="spin-logo" /> : null}
+                  Hacer Administrador
+                </button>
+              </form>
             </div>
           )}
 

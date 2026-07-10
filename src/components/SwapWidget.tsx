@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MacheteService, Profile, CoinSettings } from '@/lib/supabase';
-import { ArrowDown, Info, HelpCircle, CheckCircle2, Copy, Check } from 'lucide-react';
+import { ArrowDown, Info, HelpCircle, CheckCircle2, Copy, Check, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 interface SwapWidgetProps {
@@ -259,16 +259,65 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
             </div>
           </div>
 
-          {/* Button CTA */}
+          {/* Compliance Checks & Button CTA */}
           {user ? (
-            <button 
-              type="submit" 
-              disabled={loading || toAmount <= 0}
-              className="btn btn-gold" 
-              style={{ width: '100%', marginTop: '0.5rem' }}
-            >
-              {loading ? 'Procesando Swap...' : 'Intercambiar (Simulado)'}
-            </button>
+            (() => {
+              const isPhoneVerified = !!user.phone_verified;
+              const isWalletLinked = !!user.wallet_address;
+              const isCompliant = isPhoneVerified && isWalletLinked;
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  {!isCompliant && (
+                    <div style={{
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      borderRadius: '8px',
+                      padding: '0.85rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      textAlign: 'left'
+                    }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        <Info size={14} />
+                        <span>Operaciones Bloqueadas</span>
+                      </div>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
+                        Para comprar, vender o retirar $MACHETE debes cumplir los siguientes requisitos en tu cuenta:
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem', marginTop: '0.15rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4ade80' }}>
+                          <CheckCircle2 size={12} />
+                          <span>E-mail verificado correctamente</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isPhoneVerified ? '#4ade80' : '#fbbf24' }}>
+                          {isPhoneVerified ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                          <span>Teléfono móvil verificado ({isPhoneVerified ? 'Listo' : 'Pendiente en Mi Perfil'})</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isWalletLinked ? '#4ade80' : '#fbbf24' }}>
+                          {isWalletLinked ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                          <span>Billetera cripto vinculada ({isWalletLinked ? 'Listo' : 'Pendiente en Dashboard'})</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    disabled={loading || toAmount <= 0 || !isCompliant}
+                    className="btn btn-gold" 
+                    style={{ 
+                      width: '100%', 
+                      opacity: isCompliant ? 1 : 0.5,
+                      cursor: isCompliant ? 'pointer' : 'not-allowed'
+                    }}
+                  >
+                    {loading ? 'Procesando Swap...' : isCompliant ? 'Intercambiar (Simulado)' : 'Cumple los Requisitos para Operar'}
+                  </button>
+                </div>
+              );
+            })()
           ) : (
             <Link href="/login" className="btn btn-green" style={{ width: '100%', marginTop: '0.5rem', textAlign: 'center' }}>
               Inicia Sesión para Hacer Swap

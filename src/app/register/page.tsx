@@ -7,8 +7,18 @@ import Image from 'next/image';
 import { MacheteService } from '@/lib/supabase';
 import { 
   ArrowLeft, Mail, Lock, Eye, EyeOff, UserPlus, Loader2, CheckCircle2, 
-  User, ShieldCheck, Calendar, Phone, FileText, Upload, RefreshCw, Check
+  User, ShieldCheck, Calendar, Phone, FileText, Upload, RefreshCw, Check,
+  AlertCircle, Copy, HelpCircle, Key, FileCode, CheckSquare
 } from 'lucide-react';
+
+const BIP39_WORDS = [
+  'alpha', 'beta', 'gamma', 'delta', 'omega', 'machete', 'capybara', 'crypto',
+  'token', 'wallet', 'blockchain', 'jungle', 'forest', 'river', 'gold', 'silver',
+  'bronze', 'diamond', 'emerald', 'ruby', 'safari', 'tokenomics', 'supply', 'ledger',
+  'node', 'miner', 'staking', 'yield', 'swap', 'liquidity', 'pool', 'chart',
+  'market', 'bull', 'bear', 'whale', 'shrimp', 'crab', 'octopus', 'dolphin',
+  'moon', 'rocket', 'orbit', 'planet', 'star', 'galaxy', 'universe', 'cosmos'
+];
 
 export default function Register() {
   const router = useRouter();
@@ -17,16 +27,22 @@ export default function Register() {
   const [isAdminSetup, setIsAdminSetup] = useState(false);
   const [isMock, setIsMock] = useState(false);
   
-  // Active Step (1: Credentials, 2: Personal Profile, 3: KYC Identity)
+  // Active Step (1: Credentials & Avatar, 2: Personal Details & Phone SMS, 3: KYC Documents, 4: Recovery Words)
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // POPUP MODALS STATE
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+
   // STEP 1 FIELDS
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+  const [avatarName, setAvatarName] = useState('');
   
   // STEP 2 FIELDS
   const [username, setUsername] = useState('');
@@ -36,6 +52,13 @@ export default function Register() {
   const [phoneNum, setPhoneNum] = useState('');
   const [birthDate, setBirthDate] = useState('');
   
+  // PHONE VERIFICATION OTP STATES
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+
   // STEP 3 FIELDS (KYC)
   const [documentType, setDocumentType] = useState('DNI');
   const [documentId, setDocumentId] = useState('');
@@ -43,6 +66,10 @@ export default function Register() {
   const [fileNameBack, setFileNameBack] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+
+  // STEP 4 FIELDS (RECOVERY)
+  const [recoveryWords, setRecoveryWords] = useState('');
+  const [copiedWords, setCopiedWords] = useState(false);
 
   useEffect(() => {
     MacheteService.init();
@@ -83,13 +110,113 @@ export default function Register() {
     return String(err);
   };
 
+  // AVATAR FILE UPLOADER & VALIDATION
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (max 1MB)
+    if (file.size > 1024 * 1024) {
+      setError('El tamaño del avatar no debe superar 1 MB.');
+      return;
+    }
+
+    // Validate extension (.jpg, .jpeg, .png)
+    const validExtensions = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validExtensions.includes(file.type)) {
+      setError('Formato no soportado. Sube una imagen en formato .jpg, .jpeg o .png.');
+      return;
+    }
+
+    setError('');
+    setAvatarName(file.name);
+
+    // Read as Base64 for localstorage / db profile sync
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // OTP CODE SENDER (SMS)
+  const handleSendOtp = async () => {
+    if (!phoneNum) {
+      setError('Por favor, introduce tu número de teléfono.');
+      return;
+    }
+    setError('');
+    setVerifyingPhone(true);
+
+    const fullPhone = `${phoneCode}${phoneNum}`;
+
+    try {
+      if (isMock) {
+        // Generate a random 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        setOtpCode(code);
+        setOtpSent(true);
+        setShowOtpModal(true);
+        // Print it clearly to console for easy access during testing
+        console.log(`[SMS VERIFIER] Código OTP generado: ${code}`);
+      } else {
+        // CALL SUPABASE OTP AUTH API FOR REAL SMS VERIFICATION
+        const { error: authErr } = await MacheteService.sendSmsOtp(fullPhone);
+        if (authErr) {
+          setError(authErr);
+        } else {
+          setOtpSent(true);
+          setShowOtpModal(true);
+        }
+      }
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    } finally {
+      setVerifyingPhone(false);
+    }
+  };
+
+  // OTP CODE VERIFICATION
+  const handleVerifyOtp = async () => {
+    if (!otpInput) return;
+    setError('');
+    setLoading(true);
+
+    const fullPhone = `${phoneCode}${phoneNum}`;
+
+    try {
+      if (isMock) {
+        if (otpInput === otpCode) {
+          setPhoneVerified(true);
+          setShowOtpModal(false);
+          setError('');
+        } else {
+          setError('El código introducido no es válido.');
+        }
+      } else {
+        // CALL SUPABASE OTP VERIFICATION
+        const success = await MacheteService.verifySmsOtp(fullPhone, otpInput);
+        if (success) {
+          setPhoneVerified(true);
+          setShowOtpModal(false);
+        } else {
+          setError('Código SMS incorrecto o expirado.');
+        }
+      }
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // STEP NAVIGATION & VALIDATIONS
   const handleNextStep = () => {
     setError('');
     
     if (step === 1) {
       if (!email || !password) {
-        setError('Por favor, rellena todos los campos.');
+        setError('Por favor, rellena todos los campos de credenciales.');
         return;
       }
       if (password.length < 6) {
@@ -106,19 +233,66 @@ export default function Register() {
         setError('Por favor, rellena todos los datos personales.');
         return;
       }
+      if (!phoneVerified && !isAdminSetup) {
+        setError('Debes verificar tu número de teléfono móvil mediante el código SMS antes de continuar.');
+        return;
+      }
       const age = calculateAge(birthDate);
       if (age < 18) {
         setError('Debes ser mayor de 18 años para abrir una cuenta oficial.');
         return;
       }
       
-      // If it is admin setup, skip KYC step and submit immediately
+      // If it is admin setup, skip KYC step and go directly to Recovery Words or submit
       if (isAdminSetup) {
-        handleFinalSubmit();
+        generateRecoveryWordsStep();
       } else {
         setStep(3);
       }
+    } else if (step === 3) {
+      if (!documentId) {
+        setError('Por favor, introduce el número de identificación oficial.');
+        return;
+      }
+      if (!fileNameFront) {
+        setError('Por favor, adjunta la foto frontal de tu documento.');
+        return;
+      }
+      
+      // Bio scanning animation
+      triggerScanningAnimation();
     }
+  };
+
+  const triggerScanningAnimation = async () => {
+    setScanning(true);
+    setScanProgress(10);
+    
+    const interval = setInterval(() => {
+      setScanProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 15;
+      });
+    }, 300);
+
+    await new Promise((resolve) => setTimeout(resolve, 2200));
+    setScanning(false);
+    
+    generateRecoveryWordsStep();
+  };
+
+  const generateRecoveryWordsStep = () => {
+    // Generate 12 random BIP39 words
+    const words: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const idx = Math.floor(Math.random() * BIP39_WORDS.length);
+      words.push(BIP39_WORDS[idx]);
+    }
+    setRecoveryWords(words.join(' '));
+    setStep(4);
   };
 
   const handlePrevStep = () => {
@@ -137,31 +311,9 @@ export default function Register() {
     }
   };
 
-  const handleFinalSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleFinalSubmit = async () => {
     setError('');
     setLoading(true);
-
-    // If real KYC flow, simulate biometric verification scanning first
-    if (!isAdminSetup) {
-      setScanning(true);
-      setScanProgress(10);
-      
-      // Beautiful simulation intervals
-      const interval = setInterval(() => {
-        setScanProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 15;
-        });
-      }, 300);
-
-      // Wait 2.2 seconds for biometric KYC simulation to complete
-      await new Promise((resolve) => setTimeout(resolve, 2200));
-      setScanning(false);
-    }
 
     try {
       const res = await MacheteService.signUp({
@@ -171,15 +323,18 @@ export default function Register() {
         firstName,
         lastName,
         phone: `${phoneCode} ${phoneNum}`,
+        phoneVerified: phoneVerified || isAdminSetup,
         birthDate,
         documentId,
         role: isAdminSetup ? 'admin' : 'user',
         kycStatus: isAdminSetup ? 'approved' : 'pending',
+        kycDocumentType: documentType,
         kycDocumentUrl: fileNameFront ? `/storage/kyc/${fileNameFront}` : undefined,
+        avatarUrl: avatarBase64 || undefined,
+        recoveryWords: recoveryWords || undefined,
       });
 
       if (res.success) {
-        // Redirect to dashboard or login
         router.push('/dashboard');
         router.refresh();
       } else {
@@ -192,6 +347,12 @@ export default function Register() {
     }
   };
 
+  const handleCopyWords = () => {
+    navigator.clipboard.writeText(recoveryWords);
+    setCopiedWords(true);
+    setTimeout(() => setCopiedWords(false), 2000);
+  };
+
   return (
     <main style={{
       width: '100vw',
@@ -199,7 +360,7 @@ export default function Register() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem 1rem',
+      padding: '2.5rem 1rem',
       position: 'relative',
     }}>
       {/* Background radial glow */}
@@ -208,100 +369,134 @@ export default function Register() {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: '450px',
-        height: '450px',
-        background: 'radial-gradient(circle, rgba(0, 255, 102, 0.04) 0%, transparent 70%)',
+        width: '500px',
+        height: '500px',
+        background: 'radial-gradient(circle, rgba(255, 199, 0, 0.04) 0%, transparent 70%)',
         zIndex: -1,
         pointerEvents: 'none',
       }} />
 
-      <div className="glass-panel glass-panel-green" style={{
-        maxWidth: '460px',
+      <div className="glass-panel" style={{
+        maxWidth: '520px',
         width: '100%',
-        padding: '2.25rem 2rem',
-        border: '1px solid rgba(0, 255, 102, 0.15)',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+        padding: '2.5rem 2rem',
+        border: '1px solid rgba(255, 199, 0, 0.15)',
+        boxShadow: '0 20px 45px rgba(0,0,0,0.6)',
         display: 'flex',
         flexDirection: 'column',
         gap: '1.5rem',
       }}>
-        {/* Header Back & Logo Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            fontSize: '0.8rem',
-            color: 'var(--text-secondary)',
-            textDecoration: 'none',
-          }} className="nav-link">
-            <ArrowLeft size={14} />
-            Volver
-          </Link>
-          <div style={{ position: 'relative', width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--color-green-neon)' }}>
-            <Image src="/logo-oficial.png" alt="Logo" fill style={{ objectFit: 'cover' }} />
+        {/* Back navigation */}
+        <Link href="/" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          fontSize: '0.8rem',
+          color: 'var(--text-secondary)',
+          textDecoration: 'none',
+        }} className="nav-link">
+          <ArrowLeft size={14} />
+          Volver a Inicio
+        </Link>
+
+        {/* Branding header */}
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ position: 'relative', width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--color-gold)' }}>
+            <Image src="/logo-oficial.png" alt="Logo MacheteCoin" fill style={{ objectFit: 'cover' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }} className="gold-text-gradient">
+              {isAdminSetup ? 'Setup Administrador' : 'Crear Cuenta Machete'}
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+              Paso {step} de 4 — {step === 1 ? 'Identidad Digital' : step === 2 ? 'Perfil Personal' : step === 3 ? 'Verificación KYC' : 'Llaves de Seguridad'}
+            </p>
           </div>
         </div>
 
-        {/* Admin Setup Alert */}
-        {isAdminSetup && (
+        {/* Progress Bar */}
+        <div style={{
+          width: '100%',
+          height: '4px',
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: '2px',
+          overflow: 'hidden',
+          display: 'flex',
+        }}>
           <div style={{
-            background: 'linear-gradient(90deg, rgba(255, 199, 0, 0.15) 0%, rgba(255, 199, 0, 0.02) 100%)',
-            borderLeft: '4px solid var(--color-gold)',
-            borderRadius: '4px',
-            padding: '0.75rem 1rem',
-            color: 'var(--color-gold)',
-            fontSize: '0.8rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-          }}>
-            <ShieldCheck size={20} />
-            <div>
-              <p style={{ fontWeight: 700 }}>Modo Admin Especial Detectado</p>
-              <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Esta cuenta obtendrá rango de Administrador directo.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Step Indicator Progress Bar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            <span>Paso {step} de {isAdminSetup ? 2 : 3}</span>
-            <span style={{ fontWeight: 600, color: 'var(--color-green-neon)' }}>
-              {step === 1 && 'Credenciales'}
-              {step === 2 && 'Perfil de Datos'}
-              {step === 3 && 'Verificación de DNI (KYC)'}
-            </span>
-          </div>
-          <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${(step / (isAdminSetup ? 2 : 3)) * 100}%`,
-              background: 'linear-gradient(90deg, var(--color-green-neon) 0%, #00ffcc 100%)',
-              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            }} />
-          </div>
+            width: `${(step / 4) * 100}%`,
+            height: '100%',
+            background: 'var(--color-gold)',
+            transition: 'width 0.4s ease',
+            boxShadow: '0 0 10px rgba(255,199,0,0.5)',
+          }} />
         </div>
 
         {/* Error notification */}
         {error && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
             borderRadius: '8px',
-            padding: '0.75rem',
+            padding: '0.75rem 1rem',
             color: '#f87171',
             fontSize: '0.8rem',
             lineHeight: 1.4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
           }}>
-            {error}
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
           </div>
         )}
 
-        {/* STEP 1: CREDENTIALS */}
+        {/* STEP 1: CREDENTIALS & AVATAR */}
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            
+            {/* Avatar upload */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div style={{
+                position: 'relative',
+                width: '84px',
+                height: '84px',
+                borderRadius: '50%',
+                border: '2px dashed rgba(255,199,0,0.4)',
+                background: 'rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                cursor: 'pointer',
+              }}>
+                {avatarBase64 ? (
+                  <Image src={avatarBase64} alt="Avatar Preview" fill style={{ objectFit: 'cover' }} />
+                ) : (
+                  <Upload size={22} style={{ color: 'var(--color-gold)', opacity: 0.8 }} />
+                )}
+                <input 
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={handleAvatarChange}
+                  style={{
+                    position: 'absolute',
+                    top: 0, left: 0, width: '100%', height: '100%',
+                    opacity: 0, cursor: 'pointer'
+                  }}
+                />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {avatarName ? avatarName : 'Subir Foto de Perfil'}
+                </p>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                  Formatos soportados: JPG, JPEG, PNG. Max. 1MB.
+                </p>
+              </div>
+            </div>
+
+            {/* Email Input */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label htmlFor="email" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
                 Correo Electrónico
@@ -335,6 +530,7 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Password Input */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label htmlFor="password" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
                 Contraseña
@@ -383,7 +579,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Terms Acceptance */}
+            {/* Terms Acceptance checkbox */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginTop: '0.25rem' }}>
               <input 
                 type="checkbox" 
@@ -399,7 +595,24 @@ export default function Register() {
                 }}
               />
               <label htmlFor="terms" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4, cursor: 'pointer' }}>
-                Confirmo que he leído y acepto los <Link href="/terms" target="_blank" style={{ color: 'var(--color-green-neon)', textDecoration: 'underline' }}>Términos de Servicio</Link>, las <Link href="/privacy" target="_blank" style={{ color: 'var(--color-green-neon)', textDecoration: 'underline' }}>Políticas de Privacidad</Link> y certifico que todos los datos declarados a continuación son originales de mi país.
+                Confirmo que he leído y acepto los{' '}
+                <button 
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--color-green-neon)',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Términos de Servicio y Políticas de Privacidad
+                </button>
+                {' '}y certifico que todos mis datos introducidos son auténticos.
               </label>
             </div>
 
@@ -414,14 +627,14 @@ export default function Register() {
           </div>
         )}
 
-        {/* STEP 2: PERSONAL PROFILE DATA */}
+        {/* STEP 2: PERSONAL PROFILE DATA & PHONE OTP */}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
             {/* Username Input */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label htmlFor="username" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                Nombre de Usuario (Apodo público)
+                Nombre de Usuario (Apodo de cuenta)
               </label>
               <div style={{
                 display: 'flex',
@@ -502,66 +715,98 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Mobile Phone Field */}
+            {/* Mobile Phone Field with Verify Button */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label htmlFor="phone" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
                 Teléfono Móvil
               </label>
-              <div style={{
-                display: 'flex',
-                background: 'rgba(0,0,0,0.25)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '8px',
-                overflow: 'hidden',
-              }}>
-                <select 
-                  value={phoneCode}
-                  onChange={(e) => setPhoneCode(e.target.value)}
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{
+                  display: 'flex',
+                  background: 'rgba(0,0,0,0.25)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  flex: 1
+                }}>
+                  <select 
+                    value={phoneCode}
+                    onChange={(e) => setPhoneCode(e.target.value)}
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: 'none',
+                      borderRight: '1px solid rgba(255,255,255,0.06)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem',
+                      padding: '0 0.75rem',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="+34" style={{ background: '#080F0C' }}>🇪🇸 +34</option>
+                    <option value="+1" style={{ background: '#080F0C' }}>🇺🇸 +1</option>
+                    <option value="+52" style={{ background: '#080F0C' }}>🇲🇽 +52</option>
+                    <option value="+54" style={{ background: '#080F0C' }}>🇦🇷 +54</option>
+                    <option value="+57" style={{ background: '#080F0C' }}>🇨🇴 +57</option>
+                    <option value="+33" style={{ background: '#080F0C' }}>🇫🇷 +33</option>
+                    <option value="+49" style={{ background: '#080F0C' }}>🇩🇪 +49</option>
+                  </select>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.5rem 0 0.75rem', color: 'var(--text-secondary)' }}>
+                    <Phone size={16} />
+                  </div>
+                  <input 
+                    type="tel" 
+                    required
+                    placeholder="654 321 098"
+                    value={phoneNum}
+                    onChange={(e) => setPhoneNum(e.target.value.replace(/[^0-9]/g, ''))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.9rem',
+                      width: '100%',
+                    }}
+                  />
+                </div>
+                
+                <button
+                  type="button"
+                  disabled={phoneVerified || verifyingPhone}
+                  onClick={handleSendOtp}
                   style={{
-                    background: 'rgba(255,255,255,0.02)',
-                    border: 'none',
-                    borderRight: '1px solid rgba(255,255,255,0.06)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    padding: '0 0.75rem',
-                    outline: 'none',
-                    cursor: 'pointer',
+                    background: phoneVerified ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 199, 0, 0.1)',
+                    border: `1px solid ${phoneVerified ? '#22c55e' : 'var(--color-gold)'}`,
+                    borderRadius: '8px',
+                    color: phoneVerified ? '#4ade80' : 'var(--color-gold)',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    padding: '0 1.25rem',
+                    cursor: phoneVerified ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
                   }}
                 >
-                  <option value="+34" style={{ background: '#080F0C' }}>🇪🇸 +34</option>
-                  <option value="+1" style={{ background: '#080F0C' }}>🇺🇸 +1</option>
-                  <option value="+52" style={{ background: '#080F0C' }}>🇲🇽 +52</option>
-                  <option value="+54" style={{ background: '#080F0C' }}>🇦🇷 +54</option>
-                  <option value="+57" style={{ background: '#080F0C' }}>🇨🇴 +57</option>
-                  <option value="+56" style={{ background: '#080F0C' }}>🇨🇱 +56</option>
-                  <option value="+51" style={{ background: '#080F0C' }}>🇵🇪 +51</option>
-                </select>
-                <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.5rem 0 0.75rem', color: 'var(--text-secondary)' }}>
-                  <Phone size={16} />
-                </div>
-                <input 
-                  type="tel" 
-                  required
-                  placeholder="654 321 098"
-                  value={phoneNum}
-                  onChange={(e) => setPhoneNum(e.target.value.replace(/[^0-9]/g, ''))}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    padding: '0.7rem 0.5rem',
-                    width: '100%',
-                  }}
-                />
+                  {verifyingPhone ? (
+                    <Loader2 size={14} className="spin-logo" />
+                  ) : phoneVerified ? (
+                    <>
+                      <Check size={14} />
+                      Verificado
+                    </>
+                  ) : (
+                    'Verificar'
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Date of Birth Input */}
+            {/* Birth Date Input */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label htmlFor="birthDate" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                Fecha de Nacimiento (Debe ser mayor de 18 años)
+                Fecha de Nacimiento
               </label>
               <div style={{
                 display: 'flex',
@@ -586,283 +831,484 @@ export default function Register() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                     width: '100%',
-                    cursor: 'pointer',
+                    colorScheme: 'dark',
                   }}
                 />
               </div>
             </div>
 
-            {/* Navigation Buttons */}
             <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
               <button 
                 type="button" 
                 onClick={handlePrevStep}
-                className="btn btn-secondary" 
-                style={{ flex: 1 }}
+                className="btn" 
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                Atrás
+                Volver
               </button>
               <button 
                 type="button" 
                 onClick={handleNextStep}
-                disabled={loading}
                 className="btn btn-gold" 
                 style={{ flex: 1 }}
               >
-                {isAdminSetup ? (loading ? 'Creando...' : 'Crear Admin') : 'Paso 3: KYC'}
+                Continuar al Paso 3
               </button>
             </div>
-
           </div>
         )}
 
-        {/* STEP 3: KYC DOCUMENT VALIDATION */}
-        {step === 3 && !isAdminSetup && (
+        {/* STEP 3: KYC IDENTITY VERIFICATION */}
+        {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
-            {/* Biometric Verification Scanning Interface */}
-            {scanning ? (
+            {/* Document Type Dropdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label htmlFor="docType" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                Tipo de Documento Oficial
+              </label>
               <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: 'rgba(0,0,0,0.25)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '8px',
+                padding: '0.7rem 1rem',
+                gap: '0.75rem',
+              }}>
+                <FileText size={16} style={{ color: 'var(--text-secondary)' }} />
+                <select 
+                  id="docType"
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.9rem',
+                    width: '100%',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="DNI" style={{ background: '#080F0C' }}>Documento Nacional de Identidad (DNI)</option>
+                  <option value="NIE" style={{ background: '#080F0C' }}>Número de Identidad de Extranjero (NIE)</option>
+                  <option value="Pasaporte" style={{ background: '#080F0C' }}>Pasaporte Oficial</option>
+                  <option value="Licencia de Conducir" style={{ background: '#080F0C' }}>Permiso / Licencia de Conducir</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Document Number Input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label htmlFor="docId" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                Número de Documento
+              </label>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: 'rgba(0,0,0,0.25)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '8px',
+                padding: '0.7rem 1rem',
+                gap: '0.75rem',
+              }}>
+                <ShieldCheck size={16} style={{ color: 'var(--text-secondary)' }} />
+                <input 
+                  type="text" 
+                  id="docId"
+                  required
+                  placeholder="ej. 12345678Z"
+                  value={documentId}
+                  onChange={(e) => setDocumentId(e.target.value.toUpperCase())}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.9rem',
+                    width: '100%',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Document Image Uploaders */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                Subir Fotos del Documento
+              </label>
+              
+              {/* Front Side */}
+              <div style={{
+                border: '1px dashed rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                background: 'rgba(0,0,0,0.15)',
+                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: '3rem 1rem',
-                background: 'rgba(0, 255, 102, 0.02)',
-                border: '2px dashed var(--color-green-neon)',
-                borderRadius: '12px',
-                position: 'relative',
-                overflow: 'hidden',
-                gap: '1.25rem',
-              }}>
-                {/* Glowing Laser Scan bar animation */}
-                <div style={{
-                  position: 'absolute',
-                  left: 0,
-                  width: '100%',
-                  height: '4px',
-                  background: 'var(--color-green-neon)',
-                  boxShadow: '0 0 15px var(--color-green-neon), 0 0 5px var(--color-green-neon)',
-                  animation: 'scannerLaser 1.5s infinite linear',
-                  zIndex: 5,
-                }} />
-                
-                <RefreshCw size={44} className="spin-logo" style={{ color: 'var(--color-green-neon)' }} />
-                
-                <div style={{ textAlign: 'center' }}>
-                  <h4 style={{ fontWeight: 700, color: 'var(--color-green-neon)', fontSize: '1rem', marginBottom: '0.25rem' }}>
-                    Escaneando Identidad... {scanProgress}%
-                  </h4>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    Verificando hologramas oficiales y validez del documento
-                  </p>
-                </div>
-
-                <style jsx global>{`
-                  @keyframes scannerLaser {
-                    0% { top: 0%; }
-                    50% { top: 100%; }
-                    100% { top: 0%; }
-                  }
-                `}</style>
+                gap: '0.4rem',
+                cursor: 'pointer',
+              }} className="drag-drop-zone">
+                <Upload size={20} style={{ color: 'var(--color-gold)' }} />
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                  {fileNameFront ? `✓ Anverso: ${fileNameFront}` : 'Arrastra o selecciona la parte Delantera (Anverso)'}
+                </span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Formatos soportados: JPG, PNG</span>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'front')}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                />
               </div>
-            ) : (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label htmlFor="documentType" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    Tipo de Documento Oficial
-                  </label>
-                  <select
-                    id="documentType"
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                    style={{
-                      background: 'rgba(0,0,0,0.25)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: '8px',
-                      padding: '0.7rem 1rem',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.9rem',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      width: '100%',
-                    }}
-                  >
-                    <option value="DNI" style={{ background: '#080F0C' }}>DNI (Documento Nacional de Identidad)</option>
-                    <option value="NIE" style={{ background: '#080F0C' }}>NIE (Número de Identidad de Extranjero)</option>
-                    <option value="Pasaporte" style={{ background: '#080F0C' }}>Pasaporte Oficial</option>
-                    <option value="Otro" style={{ background: '#080F0C' }}>Otro ID de Gobierno</option>
-                  </select>
-                </div>
 
-                {/* Document ID Input */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label htmlFor="documentId" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    Número del Documento ({documentType})
-                  </label>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'rgba(0,0,0,0.25)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '8px',
-                    padding: '0.7rem 1rem',
-                    gap: '0.75rem',
-                  }}>
-                    <FileText size={16} style={{ color: 'var(--text-secondary)' }} />
-                    <input 
-                      type="text" 
-                      id="documentId"
-                      required
-                      placeholder="ej. 12345678Z"
-                      value={documentId}
-                      onChange={(e) => setDocumentId(e.target.value.toUpperCase())}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.9rem',
-                        width: '100%',
-                      }}
-                    />
-                  </div>
-                </div>
+              {/* Back Side */}
+              <div style={{
+                border: '1px dashed rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                background: 'rgba(0,0,0,0.15)',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.4rem',
+                cursor: 'pointer',
+              }} className="drag-drop-zone">
+                <Upload size={20} style={{ color: 'var(--color-gold)' }} />
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                  {fileNameBack ? `✓ Reverso: ${fileNameBack}` : 'Arrastra o selecciona la parte Trasera (Reverso)'}
+                </span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Requerido para DNI, NIE y Licencias de Conducir</span>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'back')}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                />
+              </div>
+            </div>
 
-                {/* Upload Section - Front Side */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    Foto de DNI / Documento (Cara Frontal / Anverso)
-                  </span>
-                  <label style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px dashed rgba(255, 255, 255, 0.1)',
-                    borderRadius: '10px',
-                    padding: '1.25rem 1rem',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    gap: '0.5rem',
-                  }}>
-                    {fileNameFront ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-green-neon)' }}>
-                        <CheckCircle2 size={20} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{fileNameFront}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload size={24} style={{ color: 'var(--text-secondary)' }} />
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          Haz clic para subir o arrastra la foto frontal
-                        </span>
-                        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)' }}>
-                          PNG, JPG o PDF hasta 5MB
-                        </span>
-                      </>
-                    )}
-                    <input 
-                      type="file" 
-                      required
-                      accept="image/*,.pdf" 
-                      onChange={(e) => handleFileChange(e, 'front')} 
-                      style={{ display: 'none' }} 
-                    />
-                  </label>
+            {/* SCANNING PROGRESS OVERLAY */}
+            {scanning && (
+              <div style={{
+                background: 'rgba(8, 15, 12, 0.95)',
+                border: '1px solid var(--color-green-neon)',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <RefreshCw className="spin-logo" style={{ color: 'var(--color-green-neon)' }} size={24} />
                 </div>
-
-                {/* Upload Section - Back Side */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                    Foto de DNI / Documento (Cara Trasera / Reverso)
-                  </span>
-                  <label style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px dashed rgba(255, 255, 255, 0.1)',
-                    borderRadius: '10px',
-                    padding: '1.25rem 1rem',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    gap: '0.5rem',
-                  }}>
-                    {fileNameBack ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-green-neon)' }}>
-                        <CheckCircle2 size={20} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{fileNameBack}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload size={24} style={{ color: 'var(--text-secondary)' }} />
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          Haz clic para subir o arrastra la foto trasera
-                        </span>
-                        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)' }}>
-                          PNG, JPG o PDF hasta 5MB
-                        </span>
-                      </>
-                    )}
-                    <input 
-                      type="file" 
-                      required
-                      accept="image/*,.pdf" 
-                      onChange={(e) => handleFileChange(e, 'back')} 
-                      style={{ display: 'none' }} 
-                    />
-                  </label>
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Escaneo Biométrico KYC en Curso...
+                </h4>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${scanProgress}%`, height: '100%', background: 'var(--color-green-neon)', transition: 'width 0.2s ease' }} />
                 </div>
-
-                {/* Form Controls */}
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button 
-                    type="button" 
-                    onClick={handlePrevStep}
-                    disabled={loading}
-                    className="btn btn-secondary" 
-                    style={{ flex: 1 }}
-                  >
-                    Atrás
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => handleFinalSubmit()}
-                    disabled={loading || !documentId || !fileNameFront || !fileNameBack}
-                    className="btn btn-gold" 
-                    style={{ flex: 1, gap: '0.5rem' }}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 size={16} className="spin-logo" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Check size={16} />
-                        Verificar y Registrar
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                  Analizando originalidad de documentos y firmas biométricas oficiales... {scanProgress}%
+                </p>
+              </div>
             )}
 
+            {!scanning && (
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <button 
+                  type="button" 
+                  onClick={handlePrevStep}
+                  className="btn" 
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  Volver
+                </button>
+                <button 
+                  type="button" 
+                  onClick={handleNextStep}
+                  className="btn btn-gold" 
+                  style={{ flex: 1 }}
+                >
+                  Verificar y Continuar
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Footer Link */}
-        <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-          ¿Ya tienes una cuenta?{' '}
-          <Link href="/login" style={{ color: 'var(--color-green-neon)', fontWeight: 600, textDecoration: 'none' }} className="nav-link">
-            Inicia sesión aquí
-          </Link>
-        </div>
+        {/* STEP 4: RECOVERY SEED WORDS */}
+        {step === 4 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{
+              background: 'rgba(255, 199, 0, 0.03)',
+              border: '1px solid rgba(255, 199, 0, 0.15)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: 'var(--color-gold)' }}>
+                <Key size={18} />
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Frase Semilla de Seguridad</h4>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                Guarda estas **12 palabras en un lugar extremadamente seguro**. Esta frase te permitirá recuperar el acceso a tu saldo de MacheteCoins y restablecer tu contraseña en caso de olvido.
+              </p>
 
+              {/* Words Grid Layout */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.5rem',
+                background: 'rgba(0,0,0,0.4)',
+                border: '1px solid rgba(255,255,255,0.04)',
+                borderRadius: '8px',
+                padding: '0.75rem',
+              }}>
+                {recoveryWords.split(' ').map((word, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontSize: '0.75rem',
+                    color: 'var(--text-primary)',
+                    padding: '0.25rem 0.4rem',
+                  }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', width: '16px' }}>{index + 1}.</span>
+                    <span style={{ fontWeight: 'bold' }}>{word}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Copy Button */}
+              <button
+                type="button"
+                onClick={handleCopyWords}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '6px',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.75rem',
+                  padding: '0.5rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  fontWeight: 600
+                }}
+              >
+                {copiedWords ? (
+                  <>
+                    <Check size={14} style={{ color: 'var(--color-green-neon)' }} />
+                    Copiado al portapapeles
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} />
+                    Copiar las 12 palabras
+                  </>
+                )}
+              </button>
+            </div>
+
+            <button 
+              type="button" 
+              disabled={loading}
+              onClick={handleFinalSubmit}
+              className="btn btn-gold" 
+              style={{ width: '100%', gap: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="spin-logo" />
+                  Creando Cuenta...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={16} />
+                  He guardado mi frase, crear cuenta
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* POPUP MODAL: TERMS AND CONDITIONS */}
+      {showTermsModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '560px',
+            width: '100%',
+            maxHeight: '80vh',
+            padding: '2rem',
+            border: '1px solid rgba(255,199,0,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-gold)' }} className="gold-text-gradient">
+              Términos de Servicio y Políticas de Privacidad
+            </h3>
+            
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              fontSize: '0.8rem',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.6,
+              background: 'rgba(0,0,0,0.3)',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.02)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }} className="scrollable-content">
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>1. Aceptación del Contrato</h4>
+              <p>Al registrarte en MacheteCoin, declaras que tienes al menos 18 años, que los documentos oficiales cargados (DNI/NIE/Pasaporte/Licencia de Conducir) son originales de tu país de origen, y que aceptas la vinculación de tu billetera cripto para transferencias directas.</p>
+              
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>2. Verificación de Identidad (KYC)</h4>
+              <p>Para cumplir con las regulaciones internacionales anti-lavado de dinero (AML), MacheteCoin requiere la verificación de identidad biométrica mediante algoritmos automáticos. Nos reservamos el derecho de aprobar, rechazar o suspender cualquier cuenta si se detecta falsificación de documentos o datos inexactos.</p>
+              
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>3. Seguridad y Recuperación de Fondos</h4>
+              <p>Cada usuario es responsable único del resguardo de su frase semilla de 12 palabras. MacheteCoin es un entorno sin custodia secundaria para la recuperación directa de claves; si pierdes tus 12 palabras de recuperación, no habrá forma de restablecer el saldo de tu cuenta.</p>
+              
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>4. Políticas de Datos Personales</h4>
+              <p>Cumplimos estrictamente con la Ley de Protección de Datos (GDPR). Tus datos de verificación KYC y número de teléfono móvil están fuertemente encriptados en reposo y nunca serán vendidos ni transferidos a terceros comerciales.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowTermsModal(false)}
+              className="btn btn-gold"
+              style={{ width: '100%', alignSelf: 'center' }}
+            >
+              Cerrar y Aceptar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODAL: SMS OTP VERIFICATION CODE */}
+      {showOtpModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '380px',
+            width: '100%',
+            padding: '2rem',
+            border: '1px solid rgba(255,199,0,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            textAlign: 'center',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--color-gold)', marginBottom: '0.25rem' }}>
+              <ShieldCheck size={36} />
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                Confirmación por SMS
+              </h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: 1.45 }}>
+                Hemos enviado un código de verificación de 6 dígitos al número **{phoneCode} {phoneNum}**.
+              </p>
+            </div>
+
+            {/* OTP code helper alert if in Mock Mode */}
+            {isMock && (
+              <div style={{
+                background: 'rgba(255, 199, 0, 0.06)',
+                border: '1px solid rgba(255, 199, 0, 0.15)',
+                borderRadius: '8px',
+                padding: '0.6rem',
+                fontSize: '0.75rem',
+                color: 'var(--color-gold)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem'
+              }}>
+                <HelpCircle size={14} />
+                <span>Simulador OTP: El código es <strong>{otpCode}</strong></span>
+              </div>
+            )}
+
+            {/* Code Input */}
+            <input 
+              type="text" 
+              maxLength={6}
+              placeholder="Introduce los 6 dígitos"
+              value={otpInput}
+              onChange={(e) => setOtpInput(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{
+                background: 'rgba(0,0,0,0.4)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '8px',
+                padding: '0.75rem',
+                color: 'var(--text-primary)',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                letterSpacing: '0.2em',
+                outline: 'none',
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowOtpModal(false)}
+                className="btn"
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={loading || otpInput.length < 6}
+                onClick={handleVerifyOtp}
+                className="btn btn-gold"
+                style={{ flex: 1 }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

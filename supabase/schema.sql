@@ -8,6 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     username TEXT UNIQUE,
+    email TEXT UNIQUE,
     avatar_url TEXT,
     wallet_address TEXT,
     machete_balance NUMERIC(20, 2) DEFAULT 0.00,
@@ -15,10 +16,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     first_name TEXT DEFAULT '',
     last_name TEXT DEFAULT '',
     phone TEXT DEFAULT '',
+    phone_verified BOOLEAN DEFAULT FALSE,
     birth_date DATE,
     document_id TEXT DEFAULT '',
     kyc_status TEXT DEFAULT 'pending' CHECK (kyc_status IN ('pending', 'approved', 'rejected')),
+    kyc_document_type TEXT DEFAULT 'DNI',
     kyc_document_url TEXT,
+    two_fa_enabled BOOLEAN DEFAULT FALSE,
+    two_fa_secret TEXT,
+    recovery_words TEXT,
     terms_accepted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -30,11 +36,17 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS first_name TEXT DEFAULT '';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_name TEXT DEFAULT '';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS birth_date DATE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS document_id TEXT DEFAULT '';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kyc_status TEXT DEFAULT 'pending';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kyc_document_type TEXT DEFAULT 'DNI';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kyc_document_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS two_fa_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS two_fa_secret TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS recovery_words TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
 
 -- Agregar constraint de roles si no existe
 DO $$
@@ -185,34 +197,46 @@ BEGIN
   INSERT INTO public.profiles (
     id, 
     username, 
+    email,
     avatar_url, 
     role,
     first_name,
     last_name,
     phone,
+    phone_verified,
     birth_date,
     document_id,
     kyc_status,
+    kyc_document_type,
     kyc_document_url,
+    two_fa_enabled,
+    two_fa_secret,
+    recovery_words,
     terms_accepted
   )
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    new.email,
     new.raw_user_meta_data->>'avatar_url',
     COALESCE(new.raw_user_meta_data->>'role', 
       CASE 
-        WHEN new.email = 'sops1o6@gmail.com' THEN 'admin'
+        WHEN new.email IN ('sops1o6@gmail.com', 'sops_raptor@hotmail.es') THEN 'admin'
         ELSE 'user'
       END
     ),
     COALESCE(new.raw_user_meta_data->>'first_name', ''),
     COALESCE(new.raw_user_meta_data->>'last_name', ''),
     COALESCE(new.raw_user_meta_data->>'phone', ''),
+    COALESCE((new.raw_user_meta_data->>'phone_verified')::boolean, false),
     NULLIF(new.raw_user_meta_data->>'birth_date', '')::date,
     COALESCE(new.raw_user_meta_data->>'document_id', ''),
     COALESCE(new.raw_user_meta_data->>'kyc_status', 'pending'),
+    COALESCE(new.raw_user_meta_data->>'kyc_document_type', 'DNI'),
     new.raw_user_meta_data->>'kyc_document_url',
+    COALESCE((new.raw_user_meta_data->>'two_fa_enabled')::boolean, false),
+    new.raw_user_meta_data->>'two_fa_secret',
+    new.raw_user_meta_data->>'recovery_words',
     COALESCE((new.raw_user_meta_data->>'terms_accepted')::boolean, false)
   );
   RETURN NEW;
@@ -283,3 +307,57 @@ VALUES (
 ON CONFLICT (id) DO UPDATE
 SET role = 'admin',
     username = 'sopsdev';
+
+-- 6. RPC to promote another user to admin safely by email
+CREATE OR REPLACE FUNCTION public.promote_user_by_email(target_email TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+  caller_role TEXT;
+  target_uid UUID;
+BEGIN
+  -- Check if the caller is an admin
+  SELECT role INTO caller_role FROM public.profiles WHERE id = auth.uid();
+  IF caller_role IS NULL OR caller_role != 'admin' THEN
+    RAISE EXCEPTION 'Not authorized. Only administrators can promote users.';
+  END IF;
+
+  -- Find target user UID in auth.users
+  SELECT id INTO target_uid FROM auth.users WHERE email = target_email;
+  IF target_uid IS NULL THEN
+    RETURN FALSE; -- User not found
+  END IF;
+
+  -- Update the profile role to admin
+  UPDATE public.profiles SET role = 'admin' WHERE id = target_uid;
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. RPC to reset password by recovery seed words
+CREATE OR REPLACE FUNCTION public.reset_password_by_recovery_words(
+  target_email TEXT,
+  input_words TEXT,
+  new_password TEXT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  stored_words TEXT;
+  target_uid UUID;
+BEGIN
+  -- Find stored words
+  SELECT id, recovery_words INTO target_uid, stored_words 
+  FROM public.profiles 
+  WHERE email = target_email OR username = target_email;
+  
+  IF target_uid IS NULL OR stored_words IS NULL OR LOWER(TRIM(stored_words)) != LOWER(TRIM(input_words)) THEN
+    RETURN FALSE;
+  END IF;
+
+  -- Update auth.users encrypted password
+  UPDATE auth.users 
+  SET encrypted_password = crypt(new_password, gen_salt('bf', 10)) 
+  WHERE id = target_uid;
+
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

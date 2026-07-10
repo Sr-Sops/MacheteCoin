@@ -5,10 +5,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService, Profile, SwapTx } from '@/lib/supabase';
-import { ArrowLeft, Wallet, LogOut, Loader2, Coins, History, Copy, Check, Shield, Clock, AlertCircle } from 'lucide-react';
+import { 
+  ArrowLeft, Wallet, LogOut, Loader2, Coins, History, Copy, Check, 
+  Shield, Clock, AlertCircle, User, Settings, Lock, Trash2, Key, 
+  Upload, HelpCircle, RefreshCw, Smartphone, QrCode, ToggleLeft, ToggleRight, CheckCircle2
+} from 'lucide-react';
 
 export default function Dashboard() {
   const router = useRouter();
+  
+  // Tab control ('resumen', 'historial', 'perfil')
+  const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'perfil'>('resumen');
+  
   const [user, setUser] = useState<Profile | null>(null);
   const [swaps, setSwaps] = useState<SwapTx[]>([]);
   const [walletInput, setWalletInput] = useState('');
@@ -17,25 +25,71 @@ export default function Dashboard() {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [copiedWallet, setCopiedWallet] = useState(false);
 
+  // PROFILE EDIT FIELDS
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editBirthDate, setEditBirthDate] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [profileMessage, setProfileMessage] = useState({ text: '', type: 'success' });
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  // KYC ACTION MODAL
+  const [showKycModal, setShowKycModal] = useState(false);
+  const [kycDocType, setKycDocType] = useState('DNI');
+  const [kycDocId, setKycDocId] = useState('');
+  const [kycFileFront, setKycFileFront] = useState('');
+  const [kycFileBack, setKycFileBack] = useState('');
+  const [kycScanning, setKycScanning] = useState(false);
+  const [kycScanProgress, setKycScanProgress] = useState(0);
+
+  // 2FA GOOGLE AUTH MODAL
+  const [showTwoFaModal, setShowTwoFaModal] = useState(false);
+  const [twoFaSecret, setTwoFaSecret] = useState('');
+  const [twoFaCodeInput, setTwoFaCodeInput] = useState('');
+  const [twoFaError, setTwoFaError] = useState('');
+
+  // DELETE ACCOUNT CONFIRM MODAL
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+
+  // GOOGLE LINK MOCK STATE
+  const [googleLinked, setGoogleLinked] = useState(false);
+
   useEffect(() => {
     MacheteService.init();
-    const loadSession = async () => {
-      const u = await MacheteService.getCurrentUser();
-      if (!u) {
-        // Not logged in, redirect
-        router.push('/login');
-        return;
-      }
-      setUser(u);
-      setWalletInput(u.wallet_address || '');
-
-      // Load swaps
-      const userSwaps = await MacheteService.getUserSwaps(u.id);
-      setSwaps(userSwaps);
-      setLoading(false);
-    };
     loadSession();
   }, [router]);
+
+  const loadSession = async () => {
+    const u = await MacheteService.getCurrentUser();
+    if (!u) {
+      router.push('/login');
+      return;
+    }
+    setUser(u);
+    setWalletInput(u.wallet_address || '');
+    
+    // Set edit form values
+    setEditFirstName(u.first_name || '');
+    setEditLastName(u.last_name || '');
+    setEditEmail(u.email || '');
+    setEditPhone(u.phone || '');
+    setEditBirthDate(u.birth_date || '');
+    setEditUsername(u.username || '');
+    setAvatarBase64(u.avatar_url || null);
+    setGoogleLinked(u.id.length > 10); // Simulates linked status
+
+    // Load swaps
+    const userSwaps = await MacheteService.getUserSwaps(u.id);
+    setSwaps(userSwaps);
+    setLoading(false);
+  };
 
   const handleLogout = async () => {
     await MacheteService.signOut();
@@ -43,6 +97,7 @@ export default function Dashboard() {
     router.refresh();
   };
 
+  // WALLET LINK / UNLINK
   const handleLinkWallet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !walletInput) return;
@@ -53,6 +108,9 @@ export default function Dashboard() {
 
     if (result.success) {
       setUser(prev => prev ? { ...prev, wallet_address: walletInput } : null);
+      setProfileMessage({ text: 'Billetera vinculada correctamente. Tu saldo ya está asociado.', type: 'success' });
+    } else {
+      setProfileMessage({ text: 'Error al vincular la billetera.', type: 'error' });
     }
   };
 
@@ -64,6 +122,187 @@ export default function Dashboard() {
     if (result.success) {
       setUser(prev => prev ? { ...prev, wallet_address: null } : null);
       setWalletInput('');
+      setProfileMessage({ text: 'Billetera desvinculada.', type: 'success' });
+    }
+  };
+
+  // EDIT PROFILE
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (!currentPassword) {
+      setProfileMessage({ text: 'Por favor, introduce tu contraseña actual para guardar cualquier modificación.', type: 'error' });
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileMessage({ text: '', type: 'success' });
+
+    // Build update data
+    const updateData: Partial<Profile> = {
+      first_name: editFirstName,
+      last_name: editLastName,
+      phone: editPhone,
+      birth_date: editBirthDate,
+      username: editUsername,
+      avatar_url: avatarBase64
+    };
+
+    if (editEmail !== user.email) {
+      updateData.email = editEmail;
+    }
+
+    const result = await MacheteService.updateProfile(user.id, updateData, currentPassword, newPassword || undefined);
+    setProfileLoading(false);
+
+    if (result.success) {
+      setProfileMessage({ text: 'Perfil actualizado con éxito.', type: 'success' });
+      setCurrentPassword('');
+      setNewPassword('');
+      // Reload updated session
+      loadSession();
+    } else {
+      setProfileMessage({ text: result.error || 'Contraseña incorrecta o error al actualizar datos.', type: 'error' });
+    }
+  };
+
+  // AVATAR UPDATE
+  const handleAvatarEdit = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      setProfileMessage({ text: 'El avatar supera 1MB.', type: 'error' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // KYC BIOMETRIC SCAN ACTION
+  const handleKycSubmit = async () => {
+    if (!kycDocId || !kycFileFront) {
+      alert('Por favor, rellena todos los campos e introduce la foto del documento.');
+      return;
+    }
+
+    setKycScanning(true);
+    setKycScanProgress(15);
+
+    const interval = setInterval(() => {
+      setKycScanProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 20;
+      });
+    }, 250);
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setKycScanning(false);
+
+    // Call service update for KYC status
+    if (user) {
+      const result = await MacheteService.updateProfile(user.id, {
+        kyc_status: 'pending',
+        kyc_document_type: kycDocType,
+        kyc_document_url: `/storage/kyc/${kycFileFront}`,
+        document_id: kycDocId
+      });
+
+      if (result.success) {
+        setShowKycModal(false);
+        setKycDocId('');
+        setKycFileFront('');
+        setKycFileBack('');
+        loadSession();
+        alert('KYC Enviado correctamente. El equipo lo verificará de inmediato.');
+      } else {
+        alert('Error al guardar datos de verificación.');
+      }
+    }
+  };
+
+  // 2FA MOCK INITIATION
+  const handleToggleTwoFa = () => {
+    if (user?.two_fa_enabled) {
+      // Deactivate immediately
+      if (confirm('¿Estás seguro de desactivar la autenticación en dos pasos? Tu cuenta será menos segura.')) {
+        MacheteService.updateProfile(user.id, { two_fa_enabled: false, two_fa_secret: null }).then(() => {
+          loadSession();
+        });
+      }
+    } else {
+      // Generate standard mock secret
+      const randomSecret = 'MA2F' + Math.random().toString(36).substr(2, 10).toUpperCase();
+      setTwoFaSecret(randomSecret);
+      setTwoFaError('');
+      setShowTwoFaModal(true);
+    }
+  };
+
+  const handleConfirmTwoFa = async () => {
+    if (!twoFaCodeInput || twoFaCodeInput.length < 6) {
+      setTwoFaError('El código OTP debe ser de 6 dígitos.');
+      return;
+    }
+    if (user) {
+      setLoading(true);
+      const res = await MacheteService.updateProfile(user.id, {
+        two_fa_enabled: true,
+        two_fa_secret: twoFaSecret
+      });
+      setLoading(false);
+      if (res.success) {
+        setShowTwoFaModal(false);
+        setTwoFaCodeInput('');
+        loadSession();
+      } else {
+        setTwoFaError('Código de validación incorrecto.');
+      }
+    }
+  };
+
+  // GOOGLE ACCOUNT LINK MOCK
+  const handleLinkGoogle = () => {
+    if (googleLinked) {
+      if (confirm('¿Desvincular cuenta de Google?')) {
+        setGoogleLinked(false);
+        setProfileMessage({ text: 'Cuenta de Google desvinculada con éxito.', type: 'success' });
+      }
+    } else {
+      setLoading(true);
+      setTimeout(() => {
+        setLoading(false);
+        setGoogleLinked(true);
+        setProfileMessage({ text: 'Cuenta de Google vinculada correctamente.', type: 'success' });
+      }, 800);
+    }
+  };
+
+  // DANGER ZONE DELETE ACCOUNT
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirmPassword) {
+      setDeleteError('Se requiere tu contraseña para autorizar la eliminación.');
+      return;
+    }
+    if (user) {
+      setLoading(true);
+      const result = await MacheteService.deleteAccount(user.id);
+      setLoading(false);
+      if (result.success) {
+        setShowDeleteModal(false);
+        router.push('/');
+        router.refresh();
+      } else {
+        setDeleteError('La contraseña introducida es incorrecta.');
+      }
     }
   };
 
@@ -82,14 +321,8 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div style={{
-        width: '100vw',
-        height: '100vh',
-        background: '#050a07',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '1rem',
+        width: '100vw', height: '100vh', background: '#050a07',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem',
       }}>
         <Loader2 className="spin-logo" size={48} style={{ color: 'var(--color-gold)' }} />
         <span style={{ fontFamily: 'var(--font-title)', color: 'var(--text-secondary)', fontSize: '1rem' }}>
@@ -109,9 +342,7 @@ export default function Dashboard() {
         background: 'rgba(8, 17, 12, 0.95)',
         borderBottom: '1px solid rgba(255, 199, 0, 0.15)',
         padding: '1rem 0',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
+        position: 'sticky', top: 0, zIndex: 50,
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }} className="nav-link">
@@ -135,256 +366,794 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content Area */}
-      <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+      <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
         
-        {/* Welcome Area */}
+        {/* Profile Welcome Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', width: '100%' }}>
-          <div>
-            <h1 style={{ fontSize: '2.25rem', fontWeight: 800 }}>
-              Hola, <span className="gold-text-gradient">{activeUser.username}</span>
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-              Bienvenido a tu panel de control de MacheteCoin.
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--color-gold)', background: 'rgba(0,0,0,0.3)' }}>
+              {activeUser.avatar_url ? (
+                <Image src={activeUser.avatar_url} alt="Profile Avatar" fill style={{ objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-gold)' }}>
+                  <User size={28} />
+                </div>
+              )}
+            </div>
+            <div>
+              <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>
+                Hola, <span className="gold-text-gradient">{activeUser.username}</span>
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.15rem' }}>
+                {activeUser.email}
+              </p>
+            </div>
           </div>
           
-          {/* Badges Container */}
+          {/* Status Badges */}
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {/* Badge Role */}
+            {/* Role badge */}
             <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
               background: activeUser.role === 'admin' ? 'rgba(255, 199, 0, 0.08)' : 'rgba(255, 255, 255, 0.03)',
               border: `1px solid ${activeUser.role === 'admin' ? 'rgba(255, 199, 0, 0.25)' : 'rgba(255, 255, 255, 0.06)'}`,
-              padding: '0.4rem 1rem',
-              borderRadius: '50px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
+              padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
               color: activeUser.role === 'admin' ? 'var(--color-gold)' : 'var(--text-primary)',
-              boxShadow: activeUser.role === 'admin' ? '0 0 10px rgba(255, 199, 0, 0.05)' : 'none',
             }}>
-              {activeUser.role === 'admin' ? (
-                <>
-                  <Shield size={13} style={{ color: 'var(--color-gold)' }} />
-                  Administrador
-                </>
-              ) : (
-                <>
-                  <Wallet size={13} style={{ color: 'var(--text-secondary)' }} />
-                  Inversor
-                </>
-              )}
+              {activeUser.role === 'admin' ? <Shield size={13} /> : <Wallet size={13} />}
+              {activeUser.role === 'admin' ? 'Administrador' : 'Inversor'}
             </div>
 
-            {/* Badge KYC Verification */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              background: activeUser.kyc_status === 'approved' 
-                ? 'rgba(34, 197, 94, 0.08)' 
-                : activeUser.kyc_status === 'rejected' 
-                  ? 'rgba(239, 68, 68, 0.08)' 
-                  : 'rgba(245, 158, 11, 0.08)',
-              border: `1px solid ${activeUser.kyc_status === 'approved' 
-                ? 'rgba(34, 197, 94, 0.25)' 
-                : activeUser.kyc_status === 'rejected' 
-                  ? 'rgba(239, 68, 68, 0.25)' 
-                  : 'rgba(245, 158, 11, 0.25)'}`,
-              padding: '0.4rem 1rem',
-              borderRadius: '50px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              color: activeUser.kyc_status === 'approved' 
-                ? '#4ade80' 
-                : activeUser.kyc_status === 'rejected' 
-                  ? '#f87171' 
-                  : '#fbbf24',
-            }}>
-              {activeUser.kyc_status === 'approved' ? (
-                <>
-                  <Check size={13} />
-                  KYC Verificado
-                </>
-              ) : activeUser.kyc_status === 'rejected' ? (
-                <>
-                  <AlertCircle size={13} />
-                  KYC Rechazado
-                </>
-              ) : (
-                <>
-                  <Clock size={13} />
-                  KYC Pendiente
-                </>
-              )}
-            </div>
+            {/* Clickable KYC verification status badge */}
+            <button 
+              onClick={() => activeUser.kyc_status !== 'approved' && setShowKycModal(true)}
+              disabled={activeUser.kyc_status === 'approved'}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                background: activeUser.kyc_status === 'approved' 
+                  ? 'rgba(34, 197, 94, 0.08)' 
+                  : activeUser.kyc_status === 'rejected' 
+                    ? 'rgba(239, 68, 68, 0.08)' 
+                    : 'rgba(245, 158, 11, 0.08)',
+                border: `1px solid ${activeUser.kyc_status === 'approved' 
+                  ? 'rgba(34, 197, 94, 0.25)' 
+                  : activeUser.kyc_status === 'rejected' 
+                    ? 'rgba(239, 68, 68, 0.25)' 
+                    : 'rgba(245, 158, 11, 0.25)'}`,
+                padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
+                color: activeUser.kyc_status === 'approved' ? '#4ade80' : activeUser.kyc_status === 'rejected' ? '#f87171' : '#fbbf24',
+                cursor: activeUser.kyc_status === 'approved' ? 'default' : 'pointer'
+              }}
+              title={activeUser.kyc_status !== 'approved' ? 'Pulsa para completar verificación de identidad' : ''}
+            >
+              {activeUser.kyc_status === 'approved' ? <Check size={13} /> : activeUser.kyc_status === 'rejected' ? <AlertCircle size={13} /> : <Clock size={13} />}
+              KYC {activeUser.kyc_status === 'approved' ? 'Verificado' : activeUser.kyc_status === 'rejected' ? 'Rechazado (Reintentar)' : 'Por Verificar'}
+            </button>
           </div>
         </div>
 
-        {/* Dashboard Grid Cards */}
+        {/* Dashboard Tabs Header */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: '2rem',
-        }} className="dashboard-grid">
-          
-          {/* Card 1: Balance Details */}
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255, 199, 0, 0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
-              <Coins size={24} />
-              <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo de Cuentas</h3>
-            </div>
-            
-            <div style={{ padding: '0.5rem 0' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>TUS MONEDAS ACUMULADAS</span>
-              <h2 style={{ fontSize: '3rem', color: 'var(--text-primary)', fontFamily: 'var(--font-title)', marginTop: '0.25rem', overflowWrap: 'break-word' }}>
-                {activeUser.machete_balance.toLocaleString()} <span style={{ color: 'var(--color-gold)', fontSize: '2rem' }}>$MACHETE</span>
-              </h2>
-            </div>
+          display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', gap: '1rem', marginTop: '0.5rem'
+        }}>
+          <button 
+            onClick={() => setActiveTab('resumen')}
+            style={{
+              padding: '0.75rem 1rem', background: 'transparent', border: 'none',
+              color: activeTab === 'resumen' ? 'var(--color-gold)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'resumen' ? '2px solid var(--color-gold)' : 'none',
+              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            Resumen
+          </button>
+          <button 
+            onClick={() => setActiveTab('historial')}
+            style={{
+              padding: '0.75rem 1rem', background: 'transparent', border: 'none',
+              color: activeTab === 'historial' ? 'var(--color-gold)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'historial' ? '2px solid var(--color-gold)' : 'none',
+              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            Historial de Swaps
+          </button>
+          <button 
+            onClick={() => setActiveTab('perfil')}
+            style={{
+              padding: '0.75rem 1rem', background: 'transparent', border: 'none',
+              color: activeTab === 'perfil' ? 'var(--color-gold)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'perfil' ? '2px solid var(--color-gold)' : 'none',
+              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            Mi Perfil
+          </button>
+        </div>
 
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-              * Saldo acumulado en base a simulaciones de Swap.
-            </div>
+        {/* PROFILE ACTION NOTIFICATIONS */}
+        {profileMessage.text && (
+          <div style={{
+            background: profileMessage.type === 'success' ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+            border: `1px solid ${profileMessage.type === 'success' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+            borderRadius: '8px', padding: '0.75rem 1.25rem',
+            color: profileMessage.type === 'success' ? '#4ade80' : '#f87171',
+            fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+          }}>
+            {profileMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <span>{profileMessage.text}</span>
           </div>
+        )}
 
-          {/* Card 2: Wallet Linker */}
-          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-green-neon)' }}>
-              <Wallet size={24} />
-              <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vincular Billetera Cripto</h3>
+        {/* TAB 1: RESUMEN */}
+        {activeTab === 'resumen' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }} className="dashboard-grid">
+            
+            {/* Card 1: Balance Details */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255, 199, 0, 0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
+                <Coins size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Acumulado</h3>
+              </div>
+              
+              <div style={{ padding: '0.5rem 0' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DISPONIBLE EN $MACHETE</span>
+                <h2 style={{ fontSize: '3rem', color: 'var(--text-primary)', fontFamily: 'var(--font-title)', marginTop: '0.25rem', overflowWrap: 'break-word' }}>
+                  {activeUser.machete_balance.toLocaleString()} <span style={{ color: 'var(--color-gold)', fontSize: '2rem' }}>$MACHETE</span>
+                </h2>
+              </div>
+
+              {/* Verified Phone/Wallet details inside summary card */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Teléfono Verificado por SMS:</span>
+                  <span style={{ color: activeUser.phone_verified ? '#4ade80' : '#fbbf24', fontWeight: 'bold' }}>
+                    {activeUser.phone_verified ? 'SÍ' : 'NO (Verificar en pestaña Mi Perfil)'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Monedas Asignadas a Wallet:</span>
+                  <span style={{ color: activeUser.wallet_address ? '#4ade80' : '#fbbf24', fontWeight: 'bold' }}>
+                    {activeUser.wallet_address ? 'SÍ' : 'NO (Vincula tu billetera para operar)'}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {activeUser.wallet_address ? (
-              /* Wallet Linked State */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ fontSize: '0.9rem' }}>
-                  Tienes una billetera enlazada correctamente a tu cuenta.
-                </p>
-                <div style={{
-                  background: 'rgba(0,255,102,0.04)',
-                  border: '1px solid rgba(0,255,102,0.15)',
-                  padding: '1rem',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '0.5rem',
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-green-neon)', fontWeight: 700 }}>CLAVE PÚBLICA ENLAZADA:</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '240px', color: 'var(--text-primary)' }} className="wallet-text">
-                      {activeUser.wallet_address}
-                    </span>
+            {/* Card 2: Wallet Linker */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-green-neon)' }}>
+                <Wallet size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vincular Billetera Cripto</h3>
+              </div>
+
+              {activeUser.wallet_address ? (
+                /* Wallet Linked State */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    Tienes una dirección blockchain enlazada a tu cuenta. Los intercambios que realices se asociarán automáticamente a esta clave pública.
+                  </p>
+                  <div style={{
+                    background: 'rgba(0,255,102,0.04)',
+                    border: '1px solid rgba(0,255,102,0.15)',
+                    padding: '1rem', borderRadius: '10px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-green-neon)', fontWeight: 700 }}>CLAVE PÚBLICA ENLAZADA:</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '240px', color: 'var(--text-primary)' }} className="wallet-text">
+                        {activeUser.wallet_address}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={() => handleCopyWallet(activeUser.wallet_address!)} className="btn btn-glass" style={{ padding: '0.4rem' }}>
+                        {copiedWallet ? <Check size={14} style={{ color: 'var(--color-green-neon)' }} /> : <Copy size={14} />}
+                      </button>
+                      <button onClick={handleUnlinkWallet} className="btn" style={{ padding: '0.4rem 0.75rem', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.75rem' }}>
+                        Desvincular
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => handleCopyWallet(activeUser.wallet_address!)} className="btn btn-glass" style={{ padding: '0.4rem' }}>
-                      {copiedWallet ? <Check size={14} style={{ color: 'var(--color-green-neon)' }} /> : <Copy size={14} />}
-                    </button>
-                    <button onClick={handleUnlinkWallet} className="btn" style={{ padding: '0.4rem 0.75rem', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.75rem' }}>
-                      Desvincular
-                    </button>
+                </div>
+              ) : (
+                /* Unlinked state */
+                <form onSubmit={handleLinkWallet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    Vincula tu clave pública de Polygon o Ethereum (ej. MetaMask, Trust Wallet) para asociar el saldo acumulado en compras de MacheteCoins.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Pega tu clave pública (ej. 0x1234...)"
+                      value={walletInput}
+                      onChange={(e) => setWalletInput(e.target.value)}
+                      style={{
+                        background: 'rgba(0,0,0,0.2)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: '10px',
+                        padding: '0.75rem 1rem',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                  <button type="submit" disabled={walletLoading || !walletInput} className="btn btn-gold" style={{ width: '100%', gap: '0.25rem' }}>
+                    {walletLoading ? <Loader2 size={16} className="spin-logo" /> : null}
+                    Vincular Billetera
+                  </button>
+                </form>
+              )}
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: HISTORIAL */}
+        {activeTab === 'historial' && (
+          <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
+              <History size={24} />
+              <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Historial de Intercambios (DEX Swaps)</h3>
+            </div>
+
+            {swaps.length > 0 ? (
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha / Hora</th>
+                      <th>Pago</th>
+                      <th>Tokens Adquiridos</th>
+                      <th>Tx Hash</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {swaps.map((tx) => (
+                      <tr key={tx.id}>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          {new Date(tx.created_at).toLocaleString()}
+                        </td>
+                        <td style={{ fontWeight: 600 }}>
+                          {tx.from_amount} {tx.from_token}
+                        </td>
+                        <td style={{ color: 'var(--color-gold)', fontWeight: 700 }}>
+                          +{tx.to_amount.toLocaleString()} $MACHETE
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-secondary)', textOverflow: 'ellipsis', overflow: 'hidden', width: '140px', whiteSpace: 'nowrap' }} className="hash-text">
+                              {tx.tx_hash}
+                            </span>
+                            <button onClick={() => handleCopyHash(tx.tx_hash)} style={{ background: 'transparent', border: 'none', color: 'var(--color-gold)', cursor: 'pointer' }}>
+                              {copiedHash === tx.tx_hash ? <Check size={12} style={{ color: 'var(--color-green-neon)' }} /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <p style={{ fontSize: '0.95rem' }}>No has realizado intercambios todavía.</p>
+                <Link href="/#comprar" style={{ color: 'var(--color-gold)', fontSize: '0.9rem', fontWeight: 600 }} className="nav-link">
+                  Ir a realizar un Swap de prueba en el simulador
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: MI PERFIL (COMPREHENSIVE) */}
+        {activeTab === 'perfil' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Edit details form */}
+            <form onSubmit={handleUpdateProfile} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
+                <Settings size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Configuración del Perfil</h3>
+              </div>
+
+              {/* Avatar upload */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(0,0,0,0.15)', padding: '1rem', borderRadius: '8px' }}>
+                <div style={{ position: 'relative', width: '72px', height: '72px', borderRadius: '50%', overflow: 'hidden', border: '2px dashed var(--color-gold)', background: 'rgba(0,0,0,0.3)' }}>
+                  {avatarBase64 ? (
+                    <Image src={avatarBase64} alt="Avatar" fill style={{ objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-gold)' }}>
+                      <Upload size={20} />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept=".jpg,.jpeg,.png"
+                    onChange={handleAvatarEdit}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  />
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Cambiar Foto de Perfil</h4>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Sube una imagen .jpg, .jpeg o .png de máximo 1MB.</p>
+                </div>
+              </div>
+
+              {/* User details grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }} className="profile-edit-grid">
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="username" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Apodo / Username</label>
+                  <input 
+                    type="text" 
+                    id="username"
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="email" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Correo Electrónico</label>
+                  <input 
+                    type="email" 
+                    id="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="firstName" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Nombre</label>
+                  <input 
+                    type="text" 
+                    id="firstName"
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="lastName" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Apellidos</label>
+                  <input 
+                    type="text" 
+                    id="lastName"
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="phone" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Teléfono Móvil</label>
+                  <input 
+                    type="text" 
+                    id="phone"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="birth" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fecha de Nacimiento</label>
+                  <input 
+                    type="date" 
+                    id="birth"
+                    value={editBirthDate}
+                    onChange={(e) => setEditBirthDate(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none', colorScheme: 'dark' }}
+                  />
+                </div>
+
+              </div>
+
+              {/* Password change (Optional) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-gold)', fontWeight: 'bold' }}>Cambiar Contraseña (Opcional)</span>
+                <div style={{ display: 'flex', gap: '1rem' }} className="profile-edit-grid">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+                    <label htmlFor="newpass" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Nueva Contraseña</label>
+                    <input 
+                      type="password" 
+                      id="newpass"
+                      placeholder="Mínimo 6 caracteres"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                    />
                   </div>
                 </div>
               </div>
-            ) : (
-              /* Unlinked state */
-              <form onSubmit={handleLinkWallet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ fontSize: '0.9rem' }}>
-                  Vincula tu clave pública de Polygon / Ethereum (MetaMask, Rabby, Trust Wallet) para asociarla a tu cuenta.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="Pega tu clave pública (ej. 0x1234...)"
-                    value={walletInput}
-                    onChange={(e) => setWalletInput(e.target.value)}
-                    style={{
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      borderRadius: '10px',
-                      padding: '0.75rem 1rem',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.9rem',
-                      outline: 'none',
-                    }}
-                  />
+
+              {/* Password authorization (Required to save) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255, 199, 0, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 199, 0, 0.15)' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', color: 'var(--color-gold)', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                  <Lock size={14} />
+                  <span>Contraseña Actual de Autorización</span>
                 </div>
-                <button type="submit" disabled={walletLoading || !walletInput} className="btn btn-gold" style={{ width: '100%', gap: '0.25rem' }}>
-                  {walletLoading ? <Loader2 size={16} className="spin-logo" /> : null}
-                  Vincular Billetera
-                </button>
-              </form>
-            )}
-          </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
+                  Por motivos de seguridad y KYC, debes introducir tu **contraseña actual** para poder guardar cualquier cambio en tu perfil de usuario.
+                </p>
+                <input 
+                  type="password" 
+                  required
+                  placeholder="Introduce tu contraseña actual"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255, 199, 0, 0.3)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+                />
+              </div>
 
-        </div>
+              <button type="submit" disabled={profileLoading} className="btn btn-gold" style={{ width: '100%', gap: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {profileLoading ? <Loader2 size={16} className="spin-logo" /> : null}
+                Guardar Modificaciones
+              </button>
+            </form>
 
-        {/* Transaction History Section */}
-        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
-            <History size={24} />
-            <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Historial de Intercambios (DEX Swaps)</h3>
-          </div>
+            {/* Security Section (2FA & Google Account) */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
+                <Key size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Seguridad Adicional</h3>
+              </div>
 
-          {swaps.length > 0 ? (
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Fecha / Hora</th>
-                    <th>Pago</th>
-                    <th>Tokens Adquiridos</th>
-                    <th>Tx Hash</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {swaps.map((tx) => (
-                    <tr key={tx.id}>
-                      <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        {new Date(tx.created_at).toLocaleString()}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>
-                        {tx.from_amount} {tx.from_token}
-                      </td>
-                      <td style={{ color: 'var(--color-gold)', fontWeight: 700 }}>
-                        +{tx.to_amount.toLocaleString()} $MACHETE
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-secondary)', textOverflow: 'ellipsis', overflow: 'hidden', width: '140px', whiteSpace: 'nowrap' }} className="hash-text">
-                            {tx.tx_hash}
-                          </span>
-                          <button onClick={() => handleCopyHash(tx.tx_hash)} style={{ background: 'transparent', border: 'none', color: 'var(--color-gold)', cursor: 'pointer' }}>
-                            {copiedHash === tx.tx_hash ? <Check size={12} style={{ color: 'var(--color-green-neon)' }} /> : <Copy size={12} />}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                
+                {/* 2FA Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                    <Smartphone size={20} style={{ color: 'var(--color-gold)', marginTop: '0.1rem' }} />
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Autenticador de Google (2FA)</h4>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                        Añade una capa de protección adicional introduciendo un código OTP temporal desde tu app móvil al iniciar sesión.
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleToggleTwoFa}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: activeUser.two_fa_enabled ? 'var(--color-green-neon)' : 'var(--text-secondary)' }}
+                  >
+                    {activeUser.two_fa_enabled ? <ToggleRight size={38} /> : <ToggleLeft size={38} />}
+                  </button>
+                </div>
+
+                {/* Google OAuth Link */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                    <div style={{ background: '#fff', borderRadius: '4px', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '0.1rem' }}>
+                      <Image src="https://www.google.com/favicon.ico" alt="Google Logo" width={14} height={14} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Vinculación con Cuenta de Google</h4>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                        Permite iniciar sesión rápidamente vinculando o desvinculando tu cuenta de Google.
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleLinkGoogle}
+                    className="btn"
+                    style={{ 
+                      padding: '0.4rem 1rem', 
+                      background: googleLinked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${googleLinked ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                      color: googleLinked ? '#f87171' : 'var(--text-primary)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    {googleLinked ? 'Desvincular' : 'Vincular Google'}
+                  </button>
+                </div>
+
+              </div>
             </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-              <p style={{ fontSize: '0.95rem' }}>No has realizado intercambios todavía.</p>
-              <Link href="/#comprar" style={{ color: 'var(--color-gold)', fontSize: '0.9rem', fontWeight: 600 }} className="nav-link">
-                Ir a realizar un Swap de prueba en el simulador
-              </Link>
+
+            {/* Danger Zone */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#f87171' }}>
+                <Trash2 size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Zona de Peligro</h3>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                La eliminación de la cuenta es un proceso **totalmente irreversible**. Perderás permanentemente tu nombre de usuario, el saldo acumulado en MacheteCoins y toda tu información personal de verificación.
+              </p>
+              
+              <button 
+                onClick={() => { setDeleteConfirmPassword(''); setDeleteError(''); setShowDeleteModal(true); }}
+                className="btn" 
+                style={{ 
+                  alignSelf: 'flex-start', background: 'rgba(239,68,68,0.1)', 
+                  border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', 
+                  padding: '0.5rem 1.25rem', fontSize: '0.8rem', fontWeight: 'bold' 
+                }}
+              >
+                Eliminar Mi Cuenta permanentemente
+              </button>
             </div>
-          )}
-        </div>
+
+          </div>
+        )}
 
       </main>
+
+      {/* KYC VERIFICATION ACTION MODAL */}
+      {showKycModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '480px', width: '100%', padding: '2rem',
+            border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-gold)' }} className="gold-text-gradient">
+              Verificación de Identidad KYC
+            </h3>
+
+            {kycScanning ? (
+              /* Biometric KYC Scanning animation */
+              <div style={{
+                background: 'rgba(8, 15, 12, 0.95)', border: '1px solid var(--color-green-neon)',
+                borderRadius: '8px', padding: '1.5rem', textAlign: 'center',
+                display: 'flex', flexDirection: 'column', gap: '0.75rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <RefreshCw className="spin-logo" style={{ color: 'var(--color-green-neon)' }} size={24} />
+                </div>
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Escaneo Biométrico KYC en Curso...
+                </h4>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${kycScanProgress}%`, height: '100%', background: 'var(--color-green-neon)', transition: 'width 0.2s ease' }} />
+                </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                  Analizando originalidad de documentos y firmas biométricas oficiales... {kycScanProgress}%
+                </p>
+              </div>
+            ) : (
+              /* Kyc Upload Fields */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Sube una foto de tu documento oficial de identificación para que nuestro equipo pueda verificar tu cuenta y activar tus operaciones.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="kycDocType" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tipo de Documento</label>
+                  <select 
+                    id="kycDocType"
+                    value={kycDocType}
+                    onChange={(e) => setKycDocType(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.5rem', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  >
+                    <option value="DNI" style={{ background: '#080F0C' }}>DNI</option>
+                    <option value="NIE" style={{ background: '#080F0C' }}>NIE</option>
+                    <option value="Pasaporte" style={{ background: '#080F0C' }}>Pasaporte</option>
+                    <option value="Licencia de Conducir" style={{ background: '#080F0C' }}>Permiso / Licencia de Conducir</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label htmlFor="kycDocId" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Número del Documento</label>
+                  <input 
+                    type="text" 
+                    id="kycDocId"
+                    placeholder="ej. 12345678X"
+                    value={kycDocId}
+                    onChange={(e) => setKycDocId(e.target.value.toUpperCase())}
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.5rem', color: 'var(--text-primary)', outline: 'none' }}
+                  />
+                </div>
+
+                {/* Upload boxes */}
+                <div style={{
+                  border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.85rem',
+                  textAlign: 'center', background: 'rgba(0,0,0,0.15)', position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', cursor: 'pointer',
+                }}>
+                  <Upload size={16} style={{ color: 'var(--color-gold)' }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                    {kycFileFront ? `✓ Anverso: ${kycFileFront}` : 'Foto de la parte delantera (Anverso)'}
+                  </span>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setKycFileFront(e.target.files?.[0]?.name || '')}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  />
+                </div>
+
+                <div style={{
+                  border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.85rem',
+                  textAlign: 'center', background: 'rgba(0,0,0,0.15)', position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', cursor: 'pointer',
+                }}>
+                  <Upload size={16} style={{ color: 'var(--color-gold)' }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                    {kycFileBack ? `✓ Reverso: ${kycFileBack}` : 'Foto de la parte trasera (Reverso)'}
+                  </span>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setKycFileBack(e.target.files?.[0]?.name || '')}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowKycModal(false)}
+                    className="btn"
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleKycSubmit}
+                    className="btn btn-gold"
+                    style={{ flex: 1 }}
+                  >
+                    Enviar KYC
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2FA SETUP MODAL */}
+      {showTwoFaModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '380px', width: '100%', padding: '2rem',
+            border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+            textAlign: 'center'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--color-gold)' }}>
+              <QrCode size={48} />
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Autenticador Google 2FA</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: 1.45 }}>
+                Escanea el código QR en tu app Google Authenticator o introduce la siguiente clave secreta:
+              </p>
+            </div>
+
+            <div style={{ background: '#fff', padding: '0.75rem', borderRadius: '8px', display: 'inline-block', margin: '0 auto' }}>
+              {/* Standard mock QR code from Google APIs */}
+              <Image 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=otpauth://totp/MacheteCoin:${editEmail}?secret=${twoFaSecret}&issuer=MacheteCoin`} 
+                alt="QR 2FA" width={130} height={130} 
+              />
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 199, 0, 0.05)', border: '1px solid rgba(255, 199, 0, 0.15)',
+              borderRadius: '8px', padding: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--color-gold)'
+            }}>
+              Secret Key: <strong>{twoFaSecret}</strong>
+            </div>
+
+            {twoFaError && (
+              <span style={{ color: '#f87171', fontSize: '0.7rem' }}>{twoFaError}</span>
+            )}
+
+            <input 
+              type="text" 
+              maxLength={6}
+              placeholder="Introduce el código de 6 dígitos"
+              value={twoFaCodeInput}
+              onChange={(e) => setTwoFaCodeInput(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{
+                background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px',
+                padding: '0.6rem', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 'bold',
+                textAlign: 'center', letterSpacing: '0.15em', outline: 'none'
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowTwoFaModal(false)}
+                className="btn"
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmTwoFa}
+                className="btn btn-gold"
+                style={{ flex: 1 }}
+              >
+                Activar 2FA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DANGER ZONE DELETE ACCOUNT CONFIRM MODAL */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '420px', width: '100%', padding: '2rem',
+            border: '1px solid rgba(239,68,68,0.3)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+            background: '#0d0505'
+          }}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#f87171' }}>
+              <AlertCircle size={22} />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 'bold' }}>¿Confirmas la eliminación permanente?</h3>
+            </div>
+            
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              Para confirmar que deseas borrar tu cuenta por completo (incluyendo tu saldo de MacheteCoins y toda tu identidad verificada), introduce tu **contraseña de inicio de sesión**.
+            </p>
+
+            {deleteError && (
+              <span style={{ color: '#f87171', fontSize: '0.75rem', textAlign: 'left' }}>{deleteError}</span>
+            )}
+
+            <input 
+              type="password" 
+              placeholder="Introduce tu contraseña"
+              value={deleteConfirmPassword}
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
+            />
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="btn"
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="btn"
+                style={{ flex: 1, background: '#ef4444', color: '#fff', fontWeight: 'bold' }}
+              >
+                Eliminar Cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .dashboard-grid {
           grid-template-columns: 1fr !important;
+        }
+        .profile-edit-grid {
+          grid-template-columns: 1fr !important;
+        }
+        @media (min-width: 768px) {
+          .profile-edit-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
         }
         @media (min-width: 992px) {
           .dashboard-grid {

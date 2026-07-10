@@ -24,6 +24,7 @@ export const supabaseClient = isRealSupabaseConfigured()
 export interface Profile {
   id: string;
   username: string;
+  email?: string;
   avatar_url: string | null;
   wallet_address: string | null;
   machete_balance: number;
@@ -31,10 +32,15 @@ export interface Profile {
   first_name?: string;
   last_name?: string;
   phone?: string;
+  phone_verified?: boolean;
   birth_date?: string;
   document_id?: string;
   kyc_status?: 'pending' | 'approved' | 'rejected';
+  kyc_document_type?: string;
   kyc_document_url?: string | null;
+  two_fa_enabled?: boolean;
+  two_fa_secret?: string | null;
+  recovery_words?: string | null;
   terms_accepted?: boolean;
   created_at: string;
 }
@@ -210,13 +216,23 @@ export const MacheteService = {
     firstName?: string;
     lastName?: string;
     phone?: string;
+    phoneVerified?: boolean;
     birthDate?: string;
     documentId?: string;
     role?: 'user' | 'admin';
     kycStatus?: 'pending' | 'approved' | 'rejected';
+    kycDocumentType?: string;
     kycDocumentUrl?: string;
+    avatarUrl?: string;
+    twoFaEnabled?: boolean;
+    twoFaSecret?: string;
+    recoveryWords?: string;
   }) => {
-    const { email, username, password, firstName, lastName, phone, birthDate, documentId, role, kycStatus, kycDocumentUrl } = params;
+    const { 
+      email, username, password, firstName, lastName, phone, phoneVerified, 
+      birthDate, documentId, role, kycStatus, kycDocumentType, kycDocumentUrl,
+      avatarUrl, twoFaEnabled, twoFaSecret, recoveryWords 
+    } = params;
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
       try {
@@ -229,11 +245,17 @@ export const MacheteService = {
               first_name: firstName,
               last_name: lastName,
               phone,
+              phone_verified: phoneVerified || false,
               birth_date: birthDate,
               document_id: documentId,
               role: role || 'user',
               kyc_status: kycStatus || 'pending',
+              kyc_document_type: kycDocumentType || 'DNI',
               kyc_document_url: kycDocumentUrl || null,
+              avatar_url: avatarUrl || null,
+              two_fa_enabled: twoFaEnabled || false,
+              two_fa_secret: twoFaSecret || null,
+              recovery_words: recoveryWords || null,
               terms_accepted: true
             },
           },
@@ -260,17 +282,22 @@ export const MacheteService = {
       const newProfile: Profile = {
         id: Math.random().toString(36).substr(2, 9),
         username,
-        avatar_url: null,
+        avatar_url: avatarUrl || null,
         wallet_address: null,
         machete_balance: isFirstAdmin ? 10000000.00 : 0.00,
         role: isFirstAdmin ? 'admin' : 'user',
         first_name: firstName || '',
         last_name: lastName || '',
         phone: phone || '',
+        phone_verified: phoneVerified || false,
         birth_date: birthDate || '',
         document_id: documentId || '',
         kyc_status: isFirstAdmin ? 'approved' : (kycStatus || 'pending'),
+        kyc_document_type: kycDocumentType || 'DNI',
         kyc_document_url: kycDocumentUrl || null,
+        two_fa_enabled: twoFaEnabled || false,
+        two_fa_secret: twoFaSecret || null,
+        recovery_words: recoveryWords || null,
         terms_accepted: true,
         created_at: new Date().toISOString(),
       };
@@ -282,13 +309,39 @@ export const MacheteService = {
     }
   },
 
-  signIn: async (email: string, password?: string) => {
+  signIn: async (loginInput: string, password?: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
       try {
-        // Direct sign in link or mock credentials
+        let resolvedEmail = loginInput;
+        
+        // If loginInput doesn't contain '@', it's a username or phone
+        if (!loginInput.includes('@')) {
+          const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('email')
+            .or(`username.eq."${loginInput}",phone.eq."${loginInput}"`)
+            .maybeSingle();
+            
+          if (profile && profile.email) {
+            resolvedEmail = profile.email;
+          } else {
+            // Check if it looks like a phone and try directly
+            const isPhone = /^[+\d\s-]+$/.test(loginInput);
+            if (isPhone) {
+              const { data, error } = await supabaseClient.auth.signInWithPassword({
+                phone: loginInput,
+                password: password || 'machete-default-pass-change-me',
+              });
+              if (error) return { success: false, error: error.message };
+              return { success: true, user: data.user };
+            }
+            return { success: false, error: 'No se encontró ningún usuario o teléfono asociado.' };
+          }
+        }
+
         const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email,
+          email: resolvedEmail,
           password: password || 'machete-default-pass-change-me',
         });
         if (error) {
@@ -304,20 +357,36 @@ export const MacheteService = {
     } else {
       // Mock SignIn
       const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@machetecoin.com';
-      const isFirstAdmin = email.toLowerCase() === adminEmail.toLowerCase();
-      let user = profiles.find((p) => (isFirstAdmin && p.role === 'admin') || p.username.toLowerCase() === email.toLowerCase());
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sops_raptor@hotmail.es';
+      const isFirstAdmin = loginInput.toLowerCase() === adminEmail.toLowerCase();
+      let user = profiles.find((p) => 
+        (isFirstAdmin && p.role === 'admin') || 
+        p.username.toLowerCase() === loginInput.toLowerCase() ||
+        p.email?.toLowerCase() === loginInput.toLowerCase() ||
+        p.phone === loginInput
+      );
       
       if (!user) {
-        // Auto-create user for testing convenience if mock database is empty
-        const username = isFirstAdmin ? 'MacheteAdmin' : email.split('@')[0];
+        const username = isFirstAdmin ? 'MacheteAdmin' : loginInput.split('@')[0];
         const newProfile: Profile = {
           id: Math.random().toString(36).substr(2, 9),
           username,
+          email: loginInput.includes('@') ? loginInput : `${loginInput}@mock.com`,
           avatar_url: null,
           wallet_address: null,
           machete_balance: isFirstAdmin ? 10000000 : 0.00,
           role: isFirstAdmin ? 'admin' : 'user',
+          first_name: isFirstAdmin ? 'Admin' : '',
+          last_name: isFirstAdmin ? 'Machete' : '',
+          phone: '',
+          phone_verified: false,
+          birth_date: '',
+          document_id: '',
+          kyc_status: isFirstAdmin ? 'approved' : 'pending',
+          kyc_document_type: 'DNI',
+          kyc_document_url: null,
+          two_fa_enabled: false,
+          terms_accepted: true,
           created_at: new Date().toISOString(),
         };
         profiles.push(newProfile);
@@ -411,6 +480,200 @@ export const MacheteService = {
         return { success: true };
       }
       return { success: false, error: 'Usuario no encontrado' };
+    }
+  },
+
+  updateProfile: async (userId: string, data: Partial<Profile>, currentPassword?: string, newPassword?: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        // If password is being updated, we need to handle auth update
+        if (currentPassword && newPassword) {
+          // Supabase Auth allows updating password:
+          const { error: authError } = await supabaseClient.auth.updateUser({
+            password: newPassword
+          });
+          if (authError) return { success: false, error: authError.message };
+        }
+
+        // If email is being updated, handle auth email update
+        if (data.email) {
+          const { error: authError } = await supabaseClient.auth.updateUser({
+            email: data.email
+          });
+          if (authError) return { success: false, error: authError.message };
+        }
+
+        // Update rest of profile in profiles table
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update(data)
+          .eq('id', userId);
+        
+        if (error) return { success: false, error: error.message };
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      // Mock update
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      const idx = profiles.findIndex((p) => p.id === userId);
+      if (idx !== -1) {
+        profiles[idx] = { ...profiles[idx], ...data };
+        setLocalStorageItem(MOCK_STORAGE_KEYS.PROFILES, profiles);
+        
+        const session = getLocalStorageItem<Profile | null>(MOCK_STORAGE_KEYS.SESSION, null);
+        if (session && session.id === userId) {
+          setLocalStorageItem(MOCK_STORAGE_KEYS.SESSION, { ...session, ...data });
+        }
+        return { success: true };
+      }
+      return { success: false, error: 'Usuario no encontrado' };
+    }
+  },
+
+  deleteAccount: async (userId: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        // Deleting the public profile first
+        const { error: profileError } = await supabaseClient
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        // Signed out immediately
+        await supabaseClient.auth.signOut();
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      // Mock Delete Account
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      const updated = profiles.filter((p) => p.id !== userId);
+      setLocalStorageItem(MOCK_STORAGE_KEYS.PROFILES, updated);
+      setLocalStorageItem(MOCK_STORAGE_KEYS.SESSION, null);
+      return { success: true };
+    }
+  },
+
+  promoteUserByEmail: async (email: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        // Call the RPC promote_user_by_email securely
+        const { data, error } = await supabaseClient.rpc('promote_user_by_email', {
+          target_email: email
+        });
+        
+        if (error) return { success: false, error: error.message };
+        if (data === false) return { success: false, error: 'No se encontró ningún usuario con ese correo electrónico registrado.' };
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      // Mock Promote
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      const idx = profiles.findIndex((p) => p.email?.toLowerCase() === email.toLowerCase());
+      if (idx !== -1) {
+        profiles[idx].role = 'admin';
+        setLocalStorageItem(MOCK_STORAGE_KEYS.PROFILES, profiles);
+        return { success: true };
+      }
+      return { success: false, error: 'No se encontró ningún usuario con ese correo electrónico registrado.' };
+    }
+  },
+
+  sendSmsOtp: async (phone: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { error } = await supabaseClient.auth.signInWithOtp({
+          phone
+        });
+        if (error) return { error: error.message };
+        return {};
+      } catch (err: any) {
+        return { error: err?.message || String(err) };
+      }
+    }
+    return {};
+  },
+
+  verifySmsOtp: async (phone: string, token: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient.auth.verifyOtp({
+          phone,
+          token,
+          type: 'sms'
+        });
+        if (error) return false;
+        return !!data.user || !!data.session;
+      } catch (err: any) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  checkUserTwoFaEnabled: async (loginInput: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { data } = await supabaseClient
+          .from('profiles')
+          .select('two_fa_enabled')
+          .or(`username.eq."${loginInput}",phone.eq."${loginInput}",email.eq."${loginInput}"`)
+          .maybeSingle();
+        return !!data?.two_fa_enabled;
+      } catch (err) {
+        return false;
+      }
+    } else {
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      const user = profiles.find((p) => 
+        p.username.toLowerCase() === loginInput.toLowerCase() ||
+        p.email?.toLowerCase() === loginInput.toLowerCase() ||
+        p.phone === loginInput
+      );
+      return !!user?.two_fa_enabled;
+    }
+  },
+
+  resetPasswordByRecovery: async (target: string, words: string, newPass: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient.rpc('reset_password_by_recovery_words', {
+          target_email: target,
+          input_words: words,
+          new_password: newPass
+        });
+        if (error) return { success: false, error: error.message };
+        if (data === false) return { success: false, error: 'Los datos introducidos o la frase semilla no son correctos.' };
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      // Mock reset password
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      const idx = profiles.findIndex((p) => 
+        p.email?.toLowerCase() === target.toLowerCase() || 
+        p.username.toLowerCase() === target.toLowerCase()
+      );
+      if (idx !== -1) {
+        const p = profiles[idx];
+        if (p.recovery_words && p.recovery_words.trim().toLowerCase() === words.trim().toLowerCase()) {
+          return { success: true };
+        }
+      }
+      return { success: false, error: 'La frase semilla de 12 palabras es incorrecta o el usuario no existe.' };
     }
   },
 
