@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService, Profile } from '@/lib/supabase';
 import { Shield, LayoutDashboard, LogOut, LogIn, Menu, X, ArrowRight } from 'lucide-react';
+import LanguageTranslator from './LanguageTranslator';
 
 interface HeaderProps {
   twitterUrl?: string;
@@ -104,6 +105,8 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
             )}
           </div>
 
+          <LanguageTranslator />
+
           {/* User Session Area */}
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -199,6 +202,10 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
                 <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.62.15-.15 2.7-2.48 2.75-2.7.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.25-.02-.11.02-1.84 1.16-5.2 3.43-.49.34-.94.5-1.34.49-.44-.01-1.3-.25-1.93-.46-.78-.25-1.4-.39-1.35-.83.03-.23.35-.46.96-.71 3.76-1.63 6.27-2.71 7.53-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.16.13.11.17.26.19.37 0 .07.01.21 0 .33z" /></svg>
               </a>
             )}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <LanguageTranslator />
           </div>
 
           {/* Mobile Auth Area */}
