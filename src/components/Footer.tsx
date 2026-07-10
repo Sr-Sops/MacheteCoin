@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import LanguageTranslator from './LanguageTranslator';
 
 interface FooterProps {
   twitterUrl?: string;
@@ -107,8 +108,9 @@ export default function Footer({ twitterUrl, telegramUrl, discordUrl }: FooterPr
             <strong>DESCARGO DE RESPONSABILIDAD:</strong> MacheteCoin ($MACHETE) es una moneda meme con fines de entretenimiento únicamente y no representa ningún tipo de consejo de inversión ni expectativa de ganancias financieras. Las criptomonedas y especialmente las memecoins conllevan un riesgo extremadamente alto. No arriesgues capital que no estés dispuesto a perder en su totalidad. El contrato y el código se proporcionan &quot;tal cual&quot; sin garantías.
           </p>
           
-          <p style={{ marginTop: '0.5rem' }}>
-            &copy; {new Date().getFullYear()} MacheteCoin. Todos los derechos reservados.
+          <p style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+            <span>&copy; {new Date().getFullYear()} MacheteCoin. Todos los derechos reservados.</span>
+            <LanguageTranslator />
           </p>
         </div>
 
