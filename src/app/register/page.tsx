@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MacheteService } from '@/lib/supabase';
+import { MacheteService, supabaseClient } from '@/lib/supabase';
 import { 
   ArrowLeft, Mail, Lock, Eye, EyeOff, UserPlus, Loader2, CheckCircle2, 
   User, ShieldCheck, Calendar, Phone, FileText, Upload, RefreshCw, Check,
-  AlertCircle, Copy, HelpCircle, Key, FileCode, CheckSquare
+  AlertCircle, Copy, HelpCircle, Key, FileCode, CheckSquare, Smartphone, Camera
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const BIP39_WORDS = [
   'alpha', 'beta', 'gamma', 'delta', 'omega', 'machete', 'capybara', 'crypto',
@@ -71,6 +72,10 @@ export default function Register() {
   const [fileNameBack, setFileNameBack] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [kycSessionId, setKycSessionId] = useState('');
+  const [kycMethod, setKycMethod] = useState<'camera'|'qr'|null>(null);
+  const [kycCompleted, setKycCompleted] = useState(false);
+  const [kycQrUrl, setKycQrUrl] = useState('');
 
   // STEP 4 FIELDS (RECOVERY)
   const [recoveryWords, setRecoveryWords] = useState('');
@@ -293,8 +298,29 @@ export default function Register() {
         setError('Por favor, introduce el número de identificación oficial.');
         return;
       }
-      if (!fileNameFront) {
-        setError('Por favor, adjunta la foto frontal de tu documento.');
+      
+      // Check KYC Session status
+      if (kycSessionId) {
+        setLoading(true);
+        let session: any = null;
+        if (supabaseClient) {
+          const { data } = await supabaseClient
+            .from('kyc_sessions')
+            .select('status')
+            .eq('id', kycSessionId)
+            .single();
+          session = data;
+        }
+        setLoading(false);
+
+        if (!session || session.status !== 'completed') {
+          setError('Aún no has completado las fotos en tu móvil o cámara. Por favor, termina el proceso antes de continuar.');
+          return;
+        } else {
+          setKycCompleted(true);
+        }
+      } else {
+        setError('Por favor, selecciona un método de captura biométrica e inicia el proceso.');
         return;
       }
       
@@ -368,7 +394,7 @@ export default function Register() {
         role: isAdminSetup ? 'admin' : 'user',
         kycStatus: isAdminSetup ? 'approved' : 'pending',
         kycDocumentType: documentType,
-        kycDocumentUrl: fileNameFront ? `/storage/kyc/${fileNameFront}` : undefined,
+        kycDocumentUrl: kycSessionId ? `/kyc-session/${kycSessionId}` : undefined,
         avatarUrl: avatarBase64 || undefined,
         recoveryWords: recoveryWords || undefined,
       });
@@ -987,65 +1013,63 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Document Image Uploaders */}
+            {/* Document Image Uploaders - Replaced with Camera & QR options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                Subir Fotos del Documento
+                Método de Captura Biométrica
               </label>
-              
-              {/* Front Side */}
-              <div style={{
-                border: '1px dashed rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                padding: '1.25rem',
-                textAlign: 'center',
-                background: 'rgba(0,0,0,0.15)',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.4rem',
-                cursor: 'pointer',
-              }} className="drag-drop-zone">
-                <Upload size={20} style={{ color: 'var(--color-gold)' }} />
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
-                  {fileNameFront ? `✓ Anverso: ${fileNameFront}` : 'Arrastra o selecciona la parte Delantera (Anverso)'}
-                </span>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Formatos soportados: JPG, PNG</span>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'front')}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                />
-              </div>
 
-              {/* Back Side */}
-              <div style={{
-                border: '1px dashed rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                padding: '1.25rem',
-                textAlign: 'center',
-                background: 'rgba(0,0,0,0.15)',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.4rem',
-                cursor: 'pointer',
-              }} className="drag-drop-zone">
-                <Upload size={20} style={{ color: 'var(--color-gold)' }} />
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
-                  {fileNameBack ? `✓ Reverso: ${fileNameBack}` : 'Arrastra o selecciona la parte Trasera (Reverso)'}
-                </span>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Requerido para DNI, NIE y Licencias de Conducir</span>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'back')}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                />
-              </div>
+              {!kycSessionId && (
+                <div style={{ textAlign: 'center', padding: '1.5rem', background: 'rgba(0,0,0,0.15)', borderRadius: '8px' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                    Por motivos de seguridad, la captura de documentos y el selfie de identidad debe realizarse desde un teléfono móvil.
+                  </p>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const id = crypto.randomUUID();
+                      setKycSessionId(id);
+                      setKycQrUrl(`${window.location.origin}/kyc/mobile?session=${id}`);
+                    }}
+                    className="btn btn-gold"
+                  >
+                    Iniciar Verificación en Móvil
+                  </button>
+                </div>
+              )}
+
+              {kycSessionId && !kycCompleted && (
+                <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>
+                    Escanea este QR con la cámara de tu móvil:
+                  </p>
+                  <div style={{ padding: '1rem', background: 'white', borderRadius: '12px' }}>
+                    <QRCodeSVG value={kycQrUrl} size={180} />
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '1rem' }}>
+                    O si ya estás en tu móvil, pulsa este botón:
+                  </p>
+                  <button 
+                    type="button"
+                    onClick={() => window.open(kycQrUrl, '_blank')}
+                    className="btn"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%' }}
+                  >
+                    <Smartphone size={20} /> Abrir Cámara
+                  </button>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1.5rem' }}>
+                    No cierres esta pestaña. Cuando termines en el móvil, pulsa "Verificar y Continuar" abajo.
+                  </p>
+                </div>
+              )}
+              
+              {kycCompleted && (
+                <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--color-green-neon)' }}>
+                  <CheckCircle2 color="var(--color-green-neon)" size={32} style={{ margin: '0 auto 0.5rem' }} />
+                  <h4 style={{ color: 'var(--text-primary)' }}>Captura Biométrica Finalizada</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Tus fotos se han capturado con éxito.</p>
+                </div>
+              )}
             </div>
 
             {/* SCANNING PROGRESS OVERLAY */}

@@ -361,3 +361,29 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 8. KYC Sessions Table (For QR mobile syncing)
+CREATE TABLE IF NOT EXISTS public.kyc_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    temp_user_id TEXT, -- Para vincular usuarios antes de registrarse
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+    front_url TEXT,
+    back_url TEXT,
+    selfie_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.kyc_sessions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can insert a kyc session" ON public.kyc_sessions;
+CREATE POLICY "Anyone can insert a kyc session" 
+ON public.kyc_sessions FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can view their own session by temp id" ON public.kyc_sessions;
+CREATE POLICY "Anyone can view their own session by temp id" 
+ON public.kyc_sessions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can update their own session" ON public.kyc_sessions;
+CREATE POLICY "Anyone can update their own session" 
+ON public.kyc_sessions FOR UPDATE USING (true);

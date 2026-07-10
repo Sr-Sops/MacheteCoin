@@ -7,9 +7,11 @@ import Image from 'next/image';
 import { MacheteService, Profile, SwapTx } from '@/lib/supabase';
 import { 
   ArrowLeft, Wallet, LogOut, Loader2, Coins, History, Copy, Check, 
-  Shield, Clock, AlertCircle, User, Settings, Lock, Trash2, Key, 
-  Upload, HelpCircle, RefreshCw, Smartphone, QrCode, ToggleLeft, ToggleRight, CheckCircle2
+  Shield, Clock, AlertCircle, User, Settings, Lock, Trash2, Key,
+  CreditCard, ExternalLink, Calendar, CheckCircle2, ChevronRight, HelpCircle,
+  FileText, Upload, RefreshCw, Smartphone, ToggleLeft, ToggleRight, QrCode
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -46,6 +48,9 @@ export default function Dashboard() {
   const [kycFileBack, setKycFileBack] = useState('');
   const [kycScanning, setKycScanning] = useState(false);
   const [kycScanProgress, setKycScanProgress] = useState(0);
+  const [kycSessionId, setKycSessionId] = useState('');
+  const [kycQrUrl, setKycQrUrl] = useState('');
+  const [kycCompleted, setKycCompleted] = useState(false);
 
   // 2FA GOOGLE AUTH MODAL
   const [showTwoFaModal, setShowTwoFaModal] = useState(false);
@@ -186,41 +191,66 @@ export default function Dashboard() {
 
   // KYC BIOMETRIC SCAN ACTION
   const handleKycSubmit = async () => {
-    if (!kycDocId || !kycFileFront) {
-      alert('Por favor, rellena todos los campos e introduce la foto del documento.');
+    if (!kycDocId) {
+      alert('Por favor, introduce el número del documento.');
       return;
     }
 
-    setKycScanning(true);
-    setKycScanProgress(15);
+    // If not yet completed, check the kyc_sessions table
+    if (!kycCompleted && kycSessionId) {
+      setKycScanning(true);
+      setKycScanProgress(15);
 
-    const interval = setInterval(() => {
-      setKycScanProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
+      const interval = setInterval(() => {
+        setKycScanProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 20;
+        });
+      }, 250);
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setKycScanning(false);
+
+      // Check session in DB
+      const supabase = (await import('@/lib/supabase')).supabaseClient;
+      if (supabase) {
+        const { data: session } = await supabase
+          .from('kyc_sessions')
+          .select('status')
+          .eq('id', kycSessionId)
+          .single();
+
+        if (!session || session.status !== 'completed') {
+          alert('Aún no has completado las fotos en tu móvil. Completa el proceso y vuelve a intentarlo.');
+          return;
         }
-        return prev + 20;
-      });
-    }, 250);
+        setKycCompleted(true);
+      }
+      return; // Let user click again to submit
+    }
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setKycScanning(false);
+    if (!kycCompleted) {
+      alert('Primero genera el QR y completa la verificación desde tu móvil.');
+      return;
+    }
 
     // Call service update for KYC status
     if (user) {
       const result = await MacheteService.updateProfile(user.id, {
         kyc_status: 'pending',
         kyc_document_type: kycDocType,
-        kyc_document_url: `/storage/kyc/${kycFileFront}`,
+        kyc_document_url: `/kyc-session/${kycSessionId}`,
         document_id: kycDocId
       });
 
       if (result.success) {
         setShowKycModal(false);
         setKycDocId('');
-        setKycFileFront('');
-        setKycFileBack('');
+        setKycSessionId('');
+        setKycCompleted(false);
         loadSession();
         alert('KYC Enviado correctamente. El equipo lo verificará de inmediato.');
       } else {
@@ -952,45 +982,60 @@ export default function Dashboard() {
                   />
                 </div>
 
-                {/* Upload boxes */}
-                <div style={{
-                  border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.85rem',
-                  textAlign: 'center', background: 'rgba(0,0,0,0.15)', position: 'relative',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', cursor: 'pointer',
-                }}>
-                  <Upload size={16} style={{ color: 'var(--color-gold)' }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>
-                    {kycFileFront ? `✓ Anverso: ${kycFileFront}` : 'Foto de la parte delantera (Anverso)'}
-                  </span>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={(e) => setKycFileFront(e.target.files?.[0]?.name || '')}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                  />
-                </div>
+                {/* QR/Mobile KYC capture */}
+                {!kycSessionId && !kycCompleted && (
+                  <div style={{ textAlign: 'center', padding: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: '8px' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+                      Por motivos de seguridad, la captura de documentos debe realizarse desde un teléfono móvil.
+                    </p>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const id = crypto.randomUUID();
+                        setKycSessionId(id);
+                        setKycQrUrl(`${window.location.origin}/kyc/mobile?session=${id}`);
+                      }}
+                      className="btn btn-gold"
+                      style={{ width: '100%' }}
+                    >
+                      Generar QR de Verificación
+                    </button>
+                  </div>
+                )}
 
-                <div style={{
-                  border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.85rem',
-                  textAlign: 'center', background: 'rgba(0,0,0,0.15)', position: 'relative',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', cursor: 'pointer',
-                }}>
-                  <Upload size={16} style={{ color: 'var(--color-gold)' }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)' }}>
-                    {kycFileBack ? `✓ Reverso: ${kycFileBack}` : 'Foto de la parte trasera (Reverso)'}
-                  </span>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={(e) => setKycFileBack(e.target.files?.[0]?.name || '')}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                  />
-                </div>
+                {kycSessionId && !kycCompleted && (
+                  <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+                      Escanea este QR con tu móvil:
+                    </p>
+                    <div style={{ padding: '0.75rem', background: 'white', borderRadius: '10px' }}>
+                      <QRCodeSVG value={kycQrUrl} size={150} />
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>
+                      O abre directamente en tu móvil:
+                    </p>
+                    <button 
+                      type="button"
+                      onClick={() => window.open(kycQrUrl, '_blank')}
+                      className="btn"
+                      style={{ marginTop: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', fontSize: '0.8rem' }}
+                    >
+                      <Smartphone size={16} /> Abrir Cámara
+                    </button>
+                  </div>
+                )}
+
+                {kycCompleted && (
+                  <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--color-green-neon)' }}>
+                    <CheckCircle2 color="var(--color-green-neon)" size={28} style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Fotos capturadas con éxito</p>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
                   <button
                     type="button"
-                    onClick={() => setShowKycModal(false)}
+                    onClick={() => { setShowKycModal(false); setKycSessionId(''); setKycCompleted(false); }}
                     className="btn"
                     style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
                   >
@@ -1002,7 +1047,7 @@ export default function Dashboard() {
                     className="btn btn-gold"
                     style={{ flex: 1 }}
                   >
-                    Enviar KYC
+                    {kycCompleted ? 'Enviar KYC' : 'Verificar Estado'}
                   </button>
                 </div>
               </div>
