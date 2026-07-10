@@ -58,6 +58,7 @@ export interface CoinSettings {
   dexscreener_url: string;
   raydium_url: string;
   swap_rate: number;
+  swap_rate_usdt: number;
   updated_at: string;
 }
 
@@ -138,6 +139,7 @@ const initMockDB = () => {
       dexscreener_url: 'https://dexscreener.com/',
       raydium_url: 'https://quickswap.exchange/',
       swap_rate: 1000000.0,
+      swap_rate_usdt: 2500000.0,
       updated_at: new Date().toISOString(),
     };
     localStorage.setItem(MOCK_STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));

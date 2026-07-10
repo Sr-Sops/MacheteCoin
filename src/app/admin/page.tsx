@@ -32,7 +32,8 @@ export default function AdminPanel() {
   const [totalSupply, setTotalSupply] = useState('');
   const [taxBuy, setTaxBuy] = useState(0);
   const [taxSell, setTaxSell] = useState(0);
-  const [swapRate, setSwapRate] = useState(0);
+  const [swapRate, setSwapRate] = useState<number>(0);
+  const [swapRateUsdt, setSwapRateUsdt] = useState<number>(0);
 
   const [twitterUrl, setTwitterUrl] = useState('');
   const [telegramUrl, setTelegramUrl] = useState('');
@@ -64,7 +65,8 @@ export default function AdminPanel() {
       setTotalSupply(s.total_supply);
       setTaxBuy(Number(s.tax_buy));
       setTaxSell(Number(s.tax_sell));
-      setSwapRate(Number(s.swap_rate));
+      setSwapRate(s.swap_rate || 0);
+      setSwapRateUsdt(s.swap_rate_usdt || 0);
 
       // Set Socials forms
       setTwitterUrl(s.twitter_url);
@@ -93,6 +95,7 @@ export default function AdminPanel() {
       tax_buy: Number(taxBuy),
       tax_sell: Number(taxSell),
       swap_rate: Number(swapRate),
+      swap_rate_usdt: Number(swapRateUsdt),
     });
     setSaving(false);
     if (result.success) {
@@ -320,11 +323,21 @@ export default function AdminPanel() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por {getNativeToken(blockchainNetwork)}/USDT)</label>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por {getNativeToken(blockchainNetwork)})</label>
                   <input 
                     type="number" 
                     value={swapRate} 
                     onChange={(e) => setSwapRate(Number(e.target.value))} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate USDT (Ratio $MACHETE por USDT)</label>
+                  <input 
+                    type="number" 
+                    value={swapRateUsdt} 
+                    onChange={(e) => setSwapRateUsdt(Number(e.target.value))} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>

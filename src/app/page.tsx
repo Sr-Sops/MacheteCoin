@@ -70,6 +70,7 @@ export default function Home() {
     dexscreener_url: 'https://dexscreener.com/',
     raydium_url: 'https://quickswap.exchange/',
     swap_rate: 1000000.0,
+    swap_rate_usdt: 2500000.0,
     updated_at: new Date().toISOString(),
   };
 

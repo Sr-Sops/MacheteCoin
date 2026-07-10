@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MacheteService, Profile, CoinSettings, getNativeToken, getNativeTokenPriceUSD } from '@/lib/supabase';
+import { MacheteService, Profile, CoinSettings, getNativeToken } from '@/lib/supabase';
 import { ArrowDown, Info, HelpCircle, CheckCircle2, Copy, Check, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -40,8 +40,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
   useEffect(() => {
     const amountNum = parseFloat(fromAmount);
     if (!isNaN(amountNum) && amountNum > 0) {
-      const nativePrice = getNativeTokenPriceUSD(nativeToken);
-      const multiplier = fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate) / nativePrice;
+      const multiplier = fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate_usdt || 2500000);
       setToAmount(amountNum * multiplier);
     } else {
       setToAmount(0);
@@ -255,7 +254,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Precio estimado</span>
-              <span>1 {nativeToken} = {Number(settings.swap_rate).toLocaleString()} $MACHETE</span>
+              <span>1 {fromToken} = {(fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate_usdt || 2500000)).toLocaleString()} $MACHETE</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Tolerancia de Deslizamiento (Slippage)</span>

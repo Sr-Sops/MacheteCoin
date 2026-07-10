@@ -89,7 +89,8 @@ CREATE TABLE IF NOT EXISTS public.coin_settings (
     discord_url TEXT DEFAULT 'https://discord.gg/MacheteCoin',
     dexscreener_url TEXT DEFAULT 'https://dexscreener.com/',
     raydium_url TEXT DEFAULT 'https://quickswap.exchange/',
-    swap_rate NUMERIC(20, 2) DEFAULT 1000000.00, -- 1 SOL/USDT = 1,000,000 $MACHETE
+    swap_rate NUMERIC(20, 2) DEFAULT 1000000.00, -- 1 Native Token = 1,000,000 $MACHETE
+    swap_rate_usdt NUMERIC(20, 2) DEFAULT 2500000.00, -- 1 USDT = 2,500,000 $MACHETE
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
