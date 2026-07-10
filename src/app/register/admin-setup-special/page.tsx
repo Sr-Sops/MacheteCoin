@@ -14,7 +14,7 @@ export default function AdminSetup() {
   const [isMock, setIsMock] = useState(false);
 
   // PRE-FILLED ADMIN CREDENTIALS FOR COMFORTABLE REGISTRATION
-  const [email, setEmail] = useState('sops1o6@gmail.com');
+  const [email, setEmail] = useState('sops_raptor@hotmail.es');
   const [username, setUsername] = useState('sopsdev');
   const [password, setPassword] = useState('Machete@Coin26BS');
   const [firstName, setFirstName] = useState('Admin');
