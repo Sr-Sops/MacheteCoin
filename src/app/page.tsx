@@ -67,6 +67,7 @@ export default function Home() {
     twitter_url: 'https://x.com/MacheteCoin',
     telegram_url: 'https://t.me/MacheteCoin',
     discord_url: 'https://discord.gg/MacheteCoin',
+    instagram_url: 'https://instagram.com/MacheteCoin',
     dexscreener_url: 'https://dexscreener.com/',
     raydium_url: 'https://quickswap.exchange/',
     swap_rate: 1000000.0,
@@ -81,6 +82,7 @@ export default function Home() {
         twitterUrl={activeSettings.twitter_url} 
         telegramUrl={activeSettings.telegram_url} 
         discordUrl={activeSettings.discord_url} 
+        instagramUrl={activeSettings.instagram_url}
       />
 
       {/* Hero Section */}
@@ -88,6 +90,7 @@ export default function Home() {
         contractAddress={activeSettings.contract_address} 
         blockchainNetwork={activeSettings.blockchain_network}
         telegramUrl={activeSettings.telegram_url}
+        discordUrl={activeSettings.discord_url}
         raydiumUrl={activeSettings.raydium_url}
       />
 
@@ -153,6 +156,7 @@ export default function Home() {
         twitterUrl={activeSettings.twitter_url} 
         telegramUrl={activeSettings.telegram_url} 
         discordUrl={activeSettings.discord_url} 
+        instagramUrl={activeSettings.instagram_url}
       />
 
       <style jsx global>{`

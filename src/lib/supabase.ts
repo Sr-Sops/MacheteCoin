@@ -55,6 +55,7 @@ export interface CoinSettings {
   twitter_url: string;
   telegram_url: string;
   discord_url: string;
+  instagram_url: string;
   dexscreener_url: string;
   raydium_url: string;
   swap_rate: number;
@@ -136,6 +137,7 @@ const initMockDB = () => {
       twitter_url: 'https://x.com/MacheteCoin',
       telegram_url: 'https://t.me/MacheteCoin',
       discord_url: 'https://discord.gg/MacheteCoin',
+      instagram_url: 'https://instagram.com/MacheteCoin',
       dexscreener_url: 'https://dexscreener.com/',
       raydium_url: 'https://quickswap.exchange/',
       swap_rate: 1000000.0,

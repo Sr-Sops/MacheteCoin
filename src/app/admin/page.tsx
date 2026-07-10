@@ -38,6 +38,7 @@ export default function AdminPanel() {
   const [twitterUrl, setTwitterUrl] = useState('');
   const [telegramUrl, setTelegramUrl] = useState('');
   const [discordUrl, setDiscordUrl] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
   const [dexscreenerUrl, setDexscreenerUrl] = useState('');
   const [raydiumUrl, setRaydiumUrl] = useState('');
 
@@ -72,6 +73,7 @@ export default function AdminPanel() {
       setTwitterUrl(s.twitter_url);
       setTelegramUrl(s.telegram_url);
       setDiscordUrl(s.discord_url);
+      setInstagramUrl(s.instagram_url || '');
       setDexscreenerUrl(s.dexscreener_url);
       setRaydiumUrl(s.raydium_url);
 
@@ -110,6 +112,7 @@ export default function AdminPanel() {
       twitter_url: twitterUrl,
       telegram_url: telegramUrl,
       discord_url: discordUrl,
+      instagram_url: instagramUrl,
       dexscreener_url: dexscreenerUrl,
       raydium_url: raydiumUrl,
     });
@@ -158,6 +161,7 @@ export default function AdminPanel() {
         twitterUrl={twitterUrl} 
         telegramUrl={telegramUrl} 
         discordUrl={discordUrl} 
+        instagramUrl={instagramUrl}
       />
       {/* Main body */}
       <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -406,6 +410,16 @@ export default function AdminPanel() {
                     type="url" 
                     value={discordUrl} 
                     onChange={(e) => setDiscordUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Instagram URL</label>
+                  <input 
+                    type="url" 
+                    value={instagramUrl} 
+                    onChange={(e) => setInstagramUrl(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
