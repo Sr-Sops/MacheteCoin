@@ -84,10 +84,7 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
 
         {/* Desktop Navigation */}
         <nav style={{ display: 'none', gap: '2rem', alignItems: 'center' }} className="md-flex">
-          <Link href="#lore" style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500, transition: 'color 0.2s' }} className="nav-link">Sobre Nosotros</Link>
-          <Link href="#tokenomics" style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500, transition: 'color 0.2s' }} className="nav-link">Tokenomics</Link>
-          <Link href="#comprar" style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500, transition: 'color 0.2s' }} className="nav-link">Cómo Comprar</Link>
-          <Link href="#roadmap" style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500, transition: 'color 0.2s' }} className="nav-link">Roadmap</Link>
+          {/* Links removed as per user request */}
         </nav>
 
         {/* Desktop Action Buttons */}
@@ -170,37 +167,6 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
           gap: '1.5rem',
           zIndex: 99,
         }}>
-          <Link
-            href="#lore"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
-          >
-            Sobre Nosotros
-          </Link>
-          <Link
-            href="#tokenomics"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
-          >
-            Tokenomics
-          </Link>
-          <Link
-            href="#comprar"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
-          >
-            Cómo Comprar
-          </Link>
-          <Link
-            href="#roadmap"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
-          >
-            Roadmap
-          </Link>
-
-          <hr style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
-
           {/* Mobile socials */}
           <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
             {twitterUrl && (
