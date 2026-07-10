@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MacheteService, Profile, CoinSettings } from '@/lib/supabase';
+import { MacheteService, Profile, CoinSettings, getNativeToken, getNativeTokenPriceUSD } from '@/lib/supabase';
 import { ArrowDown, Info, HelpCircle, CheckCircle2, Copy, Check, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -11,7 +11,15 @@ interface SwapWidgetProps {
 
 export default function SwapWidget({ settings }: SwapWidgetProps) {
   const [user, setUser] = useState<Profile | null>(null);
-  const [fromToken, setFromToken] = useState<'POL' | 'USDT'>('POL');
+  const nativeToken = getNativeToken(settings.blockchain_network);
+  const [fromToken, setFromToken] = useState<string>(nativeToken);
+
+  useEffect(() => {
+    // If fromToken is the native one and network changes, update it
+    if (fromToken !== 'USDT') {
+      setFromToken(getNativeToken(settings.blockchain_network));
+    }
+  }, [settings.blockchain_network]);
   const [fromAmount, setFromAmount] = useState<string>('1');
   const [toAmount, setToAmount] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -32,13 +40,13 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
   useEffect(() => {
     const amountNum = parseFloat(fromAmount);
     if (!isNaN(amountNum) && amountNum > 0) {
-      // 1 POL = swap_rate $MACHETE. Let's make 1 USDT = swap_rate / 0.4 $MACHETE (as POL is ~$0.40 USD)
-      const multiplier = fromToken === 'POL' ? Number(settings.swap_rate) : Number(settings.swap_rate) / 0.4;
+      const nativePrice = getNativeTokenPriceUSD(nativeToken);
+      const multiplier = fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate) / nativePrice;
       setToAmount(amountNum * multiplier);
     } else {
       setToAmount(0);
     }
-  }, [fromAmount, fromToken, settings.swap_rate]);
+  }, [fromAmount, fromToken, settings.swap_rate, nativeToken]);
 
   const handleSwap = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,7 +177,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
               />
               <select 
                 value={fromToken}
-                onChange={(e) => setFromToken(e.target.value as 'POL' | 'USDT')}
+                onChange={(e) => setFromToken(e.target.value)}
                 style={{
                   background: 'var(--bg-jungle-light)',
                   border: '1px solid rgba(255, 199, 0, 0.2)',
@@ -181,7 +189,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                   outline: 'none',
                 }}
               >
-                <option value="POL">POL</option>
+                <option value={nativeToken}>{nativeToken}</option>
                 <option value="USDT">USDT</option>
               </select>
             </div>
@@ -247,7 +255,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Precio estimado</span>
-              <span>1 POL = {Number(settings.swap_rate).toLocaleString()} $MACHETE</span>
+              <span>1 {nativeToken} = {Number(settings.swap_rate).toLocaleString()} $MACHETE</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Tolerancia de Deslizamiento (Slippage)</span>

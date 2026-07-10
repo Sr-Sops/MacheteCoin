@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MacheteService, Profile, CoinSettings, RoadmapPhase } from '@/lib/supabase';
+import { MacheteService, Profile, CoinSettings, RoadmapPhase, getNativeToken } from '@/lib/supabase';
 import { ArrowLeft, Shield, Save, Loader2, Settings, MessageSquare, ListTodo, CheckCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -287,12 +287,16 @@ export default function AdminPanel() {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Cadena de Bloques (Network)</label>
-                  <input 
-                    type="text" 
+                  <select 
                     value={blockchainNetwork} 
                     onChange={(e) => setBlockchainNetwork(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
-                  />
+                  >
+                    <option value="Polygon">Polygon (POL)</option>
+                    <option value="Ethereum">Ethereum (ETH)</option>
+                    <option value="Binance Smart Chain">Binance Smart Chain (BNB)</option>
+                    <option value="Solana">Solana (SOL)</option>
+                  </select>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -316,7 +320,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por POL/USDT)</label>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por {getNativeToken(blockchainNetwork)}/USDT)</label>
                   <input 
                     type="number" 
                     value={swapRate} 

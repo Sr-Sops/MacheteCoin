@@ -882,3 +882,23 @@ export const MacheteService = {
     }
   },
 };
+// Helper for Network native tokens
+export const getNativeToken = (network: string): string => {
+  if (!network) return 'POL';
+  const n = network.toLowerCase();
+  if (n.includes('ethereum')) return 'ETH';
+  if (n.includes('binance') || n.includes('bsc')) return 'BNB';
+  if (n.includes('solana')) return 'SOL';
+  return 'POL'; // Default for Polygon
+};
+
+// Mock prices in USD for simulation purposes since we don't have a live oracle
+export const getNativeTokenPriceUSD = (token: string): number => {
+  switch (token) {
+    case 'POL': return 0.40;
+    case 'ETH': return 3000.00;
+    case 'BNB': return 600.00;
+    case 'SOL': return 150.00;
+    default: return 1.00;
+  }
+};
