@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService, Profile, SwapTx } from '@/lib/supabase';
-import { ArrowLeft, Wallet, LogOut, Loader2, Coins, History, Copy, Check, Shield } from 'lucide-react';
+import { ArrowLeft, Wallet, LogOut, Loader2, Coins, History, Copy, Check, Shield, Clock, AlertCircle } from 'lucide-react';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -138,9 +138,9 @@ export default function Dashboard() {
       <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         
         {/* Welcome Area */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'between', flexWrap: 'wrap', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', width: '100%' }}>
           <div>
-            <h1 style={{ fontSize: '2.25rem' }}>
+            <h1 style={{ fontSize: '2.25rem', fontWeight: 800 }}>
               Hola, <span className="gold-text-gradient">{activeUser.username}</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
@@ -148,22 +148,81 @@ export default function Dashboard() {
             </p>
           </div>
           
-          {/* Badge Role */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            background: activeUser.role === 'admin' ? 'rgba(255, 199, 0, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-            border: `1px solid ${activeUser.role === 'admin' ? 'rgba(255, 199, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)'}`,
-            padding: '0.4rem 0.85rem',
-            borderRadius: '50px',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            color: activeUser.role === 'admin' ? 'var(--color-gold)' : 'var(--text-secondary)',
-          }}>
-            {activeUser.role === 'admin' && <Shield size={12} />}
-            Rol: {activeUser.role}
+          {/* Badges Container */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {/* Badge Role */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: activeUser.role === 'admin' ? 'rgba(255, 199, 0, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+              border: `1px solid ${activeUser.role === 'admin' ? 'rgba(255, 199, 0, 0.25)' : 'rgba(255, 255, 255, 0.06)'}`,
+              padding: '0.4rem 1rem',
+              borderRadius: '50px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: activeUser.role === 'admin' ? 'var(--color-gold)' : 'var(--text-primary)',
+              boxShadow: activeUser.role === 'admin' ? '0 0 10px rgba(255, 199, 0, 0.05)' : 'none',
+            }}>
+              {activeUser.role === 'admin' ? (
+                <>
+                  <Shield size={13} style={{ color: 'var(--color-gold)' }} />
+                  Administrador
+                </>
+              ) : (
+                <>
+                  <Wallet size={13} style={{ color: 'var(--text-secondary)' }} />
+                  Inversor
+                </>
+              )}
+            </div>
+
+            {/* Badge KYC Verification */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: activeUser.kyc_status === 'approved' 
+                ? 'rgba(34, 197, 94, 0.08)' 
+                : activeUser.kyc_status === 'rejected' 
+                  ? 'rgba(239, 68, 68, 0.08)' 
+                  : 'rgba(245, 158, 11, 0.08)',
+              border: `1px solid ${activeUser.kyc_status === 'approved' 
+                ? 'rgba(34, 197, 94, 0.25)' 
+                : activeUser.kyc_status === 'rejected' 
+                  ? 'rgba(239, 68, 68, 0.25)' 
+                  : 'rgba(245, 158, 11, 0.25)'}`,
+              padding: '0.4rem 1rem',
+              borderRadius: '50px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: activeUser.kyc_status === 'approved' 
+                ? '#4ade80' 
+                : activeUser.kyc_status === 'rejected' 
+                  ? '#f87171' 
+                  : '#fbbf24',
+            }}>
+              {activeUser.kyc_status === 'approved' ? (
+                <>
+                  <Check size={13} />
+                  KYC Verificado
+                </>
+              ) : activeUser.kyc_status === 'rejected' ? (
+                <>
+                  <AlertCircle size={13} />
+                  KYC Rechazado
+                </>
+              ) : (
+                <>
+                  <Clock size={13} />
+                  KYC Pendiente
+                </>
+              )}
+            </div>
           </div>
         </div>
 

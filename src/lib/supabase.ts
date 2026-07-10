@@ -347,16 +347,42 @@ export const MacheteService = {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabaseClient
+      let { data, error } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
       
       if (error || !data) return null;
+
+      // CLIENT-SIDE AUTO-PROMOTION FOR ADMIN EMAIL
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sops_raptor@hotmail.es';
+      if (user.email && user.email.toLowerCase() === adminEmail.toLowerCase() && data.role !== 'admin') {
+        console.log("Auto-promoting user to admin role client-side...");
+        const { error: updateError } = await supabaseClient
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', user.id);
+        
+        if (!updateError) {
+          data.role = 'admin';
+        } else {
+          console.error("Auto-promotion failed:", updateError);
+        }
+      }
+
       return data as Profile;
     } else {
-      return getLocalStorageItem<Profile | null>(MOCK_STORAGE_KEYS.SESSION, null);
+      const session = getLocalStorageItem<Profile | null>(MOCK_STORAGE_KEYS.SESSION, null);
+      if (session) {
+        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sops_raptor@hotmail.es';
+        const isFirstAdmin = session.username.toLowerCase() === 'macheteadmin' || session.username.toLowerCase() === adminEmail.split('@')[0].toLowerCase();
+        if (isFirstAdmin && session.role !== 'admin') {
+          session.role = 'admin';
+          setLocalStorageItem(MOCK_STORAGE_KEYS.SESSION, session);
+        }
+      }
+      return session;
     }
   },
 
