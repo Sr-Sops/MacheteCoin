@@ -301,7 +301,7 @@ export default function Login() {
                   type="text" 
                   id="loginInput"
                   required
-                  placeholder="ejemplo@machete.com o +34..."
+                  placeholder="ejemplo@machetecoin.es o +34..."
                   value={loginInput}
                   onChange={(e) => setLoginInput(e.target.value)}
                   style={{
@@ -457,7 +457,7 @@ export default function Login() {
                     type="text" 
                     id="recTarget"
                     required
-                    placeholder="ej. MacheteKing o sops_raptor@hotmail.es"
+                    placeholder="ej. MacheteKing o soporte@machetecoin.es"
                     value={recoveryTarget}
                     onChange={(e) => setRecoveryTarget(e.target.value)}
                     style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.55rem', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem' }}

@@ -112,6 +112,18 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
         });
       // Updating chat's updated_at
       await supabaseClient.from('support_chats').update({ updated_at: new Date().toISOString() }).eq('id', chatId);
+
+      // Send email notification via API
+      fetch('/api/notify-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          email: user.email,
+          message: messageText
+        })
+      }).catch(err => console.error('Failed to send notification', err));
+
     } catch (err) {
       console.error('Error sending message:', err);
     }

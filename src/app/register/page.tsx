@@ -598,7 +598,7 @@ export default function Register() {
                   type="email" 
                   id="email"
                   required
-                  placeholder="ejemplo@machetecoin.com"
+                  placeholder="ejemplo@machetecoin.es"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
                   style={{

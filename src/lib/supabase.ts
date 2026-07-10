@@ -295,7 +295,7 @@ export const MacheteService = {
         return { success: false, error: 'El nombre de usuario ya está registrado.' };
       }
       
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@machetecoin.com';
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'soporte@machetecoin.es';
       const isFirstAdmin = email.toLowerCase() === adminEmail.toLowerCase() || role === 'admin';
       const newProfile: Profile = {
         id: Math.random().toString(36).substr(2, 9),
@@ -374,7 +374,7 @@ export const MacheteService = {
     } else {
       // Mock SignIn
       const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sops_raptor@hotmail.es';
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'soporte@machetecoin.es';
       const isFirstAdmin = loginInput.toLowerCase() === adminEmail.toLowerCase();
       let user = profiles.find((p) => 
         (isFirstAdmin && p.role === 'admin') || 
@@ -442,7 +442,7 @@ export const MacheteService = {
       if (error || !data) return null;
 
       // CLIENT-SIDE AUTO-PROMOTION FOR ADMIN EMAIL
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sops_raptor@hotmail.es';
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'soporte@machetecoin.es';
       if (user.email && user.email.toLowerCase() === adminEmail.toLowerCase() && data.role !== 'admin') {
         console.log("Auto-promoting user to admin role client-side...");
         const { error: updateError } = await supabaseClient
@@ -461,7 +461,7 @@ export const MacheteService = {
     } else {
       const session = getLocalStorageItem<Profile | null>(MOCK_STORAGE_KEYS.SESSION, null);
       if (session) {
-        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'sops_raptor@hotmail.es';
+        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'soporte@machetecoin.es';
         const isFirstAdmin = session.username.toLowerCase() === 'macheteadmin' || session.username.toLowerCase() === adminEmail.split('@')[0].toLowerCase();
         if (isFirstAdmin && session.role !== 'admin') {
           session.role = 'admin';
