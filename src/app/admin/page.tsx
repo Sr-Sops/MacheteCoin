@@ -316,7 +316,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por SOL/USDT)</label>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por POL/USDT)</label>
                   <input 
                     type="number" 
                     value={swapRate} 

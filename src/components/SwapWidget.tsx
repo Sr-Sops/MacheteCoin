@@ -11,7 +11,7 @@ interface SwapWidgetProps {
 
 export default function SwapWidget({ settings }: SwapWidgetProps) {
   const [user, setUser] = useState<Profile | null>(null);
-  const [fromToken, setFromToken] = useState<'SOL' | 'USDT'>('SOL');
+  const [fromToken, setFromToken] = useState<'POL' | 'USDT'>('POL');
   const [fromAmount, setFromAmount] = useState<string>('1');
   const [toAmount, setToAmount] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -32,8 +32,8 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
   useEffect(() => {
     const amountNum = parseFloat(fromAmount);
     if (!isNaN(amountNum) && amountNum > 0) {
-      // 1 SOL = swap_rate $MACHETE. Let's make 1 USDT = swap_rate / 150 $MACHETE (as SOL is ~150 USD)
-      const multiplier = fromToken === 'SOL' ? Number(settings.swap_rate) : Number(settings.swap_rate) / 150;
+      // 1 POL = swap_rate $MACHETE. Let's make 1 USDT = swap_rate / 0.4 $MACHETE (as POL is ~$0.40 USD)
+      const multiplier = fromToken === 'POL' ? Number(settings.swap_rate) : Number(settings.swap_rate) / 0.4;
       setToAmount(amountNum * multiplier);
     } else {
       setToAmount(0);
@@ -169,7 +169,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
               />
               <select 
                 value={fromToken}
-                onChange={(e) => setFromToken(e.target.value as 'SOL' | 'USDT')}
+                onChange={(e) => setFromToken(e.target.value as 'POL' | 'USDT')}
                 style={{
                   background: 'var(--bg-jungle-light)',
                   border: '1px solid rgba(255, 199, 0, 0.2)',
@@ -181,7 +181,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                   outline: 'none',
                 }}
               >
-                <option value="SOL">SOL</option>
+                <option value="POL">POL</option>
                 <option value="USDT">USDT</option>
               </select>
             </div>
@@ -247,7 +247,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Precio estimado</span>
-              <span>1 SOL = {Number(settings.swap_rate).toLocaleString()} $MACHETE</span>
+              <span>1 POL = {Number(settings.swap_rate).toLocaleString()} $MACHETE</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Tolerancia de Deslizamiento (Slippage)</span>
