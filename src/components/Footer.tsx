@@ -30,12 +30,12 @@ export default function Footer({ twitterUrl, telegramUrl, discordUrl }: FooterPr
           {/* Brand Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ position: 'relative', width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--color-gold)' }}>
+              <div style={{ position: 'relative', width: '36px', height: '36px' }}>
                 <Image 
                   src="/logo-oficial.png" 
                   alt="MacheteCoin Logo" 
                   fill
-                  style={{ objectFit: 'cover' }}
+                  style={{ objectFit: 'contain' }}
                 />
               </div>
               <span style={{ 

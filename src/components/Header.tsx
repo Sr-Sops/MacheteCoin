@@ -60,12 +60,12 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-          <div style={{ position: 'relative', width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--color-gold)' }}>
+          <div style={{ position: 'relative', width: '40px', height: '40px' }}>
             <Image 
               src="/logo-oficial.png" 
               alt="MacheteCoin logo" 
               fill
-              style={{ objectFit: 'cover' }}
+              style={{ objectFit: 'contain' }}
             />
           </div>
           <span style={{ 
