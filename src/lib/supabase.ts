@@ -504,6 +504,18 @@ export const MacheteService = {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
       try {
+        // First, verify current password if it's required for security
+        if (currentPassword) {
+          const { data: userData } = await supabaseClient.auth.getUser();
+          if (userData?.user?.email) {
+            const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+              email: userData.user.email,
+              password: currentPassword
+            });
+            if (signInError) return { success: false, error: 'La contraseña de autorización es incorrecta.' };
+          }
+        }
+
         // If password is being updated, we need to handle auth update
         if (currentPassword && newPassword) {
           // Supabase Auth allows updating password:

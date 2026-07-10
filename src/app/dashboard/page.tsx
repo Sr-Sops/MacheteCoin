@@ -127,6 +127,12 @@ export default function Dashboard() {
     e.preventDefault();
     if (!user || !walletInput) return;
 
+    // Validate EVM format (Polygon/Ethereum)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletInput)) {
+      setProfileMessage({ text: 'Error: La dirección no es válida. Debe ser una billetera Polygon/EVM real (ej. 0x...).', type: 'error' });
+      return;
+    }
+
     setWalletLoading(true);
     const result = await MacheteService.updateWallet(user.id, walletInput);
     setWalletLoading(false);
@@ -135,7 +141,7 @@ export default function Dashboard() {
       setUser(prev => prev ? { ...prev, wallet_address: walletInput } : null);
       setProfileMessage({ text: 'Billetera vinculada correctamente. Tu saldo ya está asociado.', type: 'success' });
     } else {
-      setProfileMessage({ text: 'Error al vincular la billetera.', type: 'error' });
+      setProfileMessage({ text: result.error || 'Error al vincular la billetera.', type: 'error' });
     }
   };
 
@@ -474,28 +480,32 @@ export default function Dashboard() {
 
             {/* Clickable KYC verification status badge */}
             <button 
-              onClick={() => activeUser.kyc_status !== 'approved' && setShowKycModal(true)}
-              disabled={activeUser.kyc_status === 'approved'}
+              onClick={() => activeUser.kyc_status !== 'approved' && activeUser.kyc_status !== 'pending' && setShowKycModal(true)}
+              disabled={activeUser.kyc_status === 'approved' || activeUser.kyc_status === 'pending'}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                 background: activeUser.kyc_status === 'approved' 
                   ? 'rgba(34, 197, 94, 0.08)' 
                   : activeUser.kyc_status === 'rejected' 
                     ? 'rgba(239, 68, 68, 0.08)' 
-                    : 'rgba(245, 158, 11, 0.08)',
+                    : activeUser.kyc_status === 'pending'
+                      ? 'rgba(56, 189, 248, 0.08)'
+                      : 'rgba(245, 158, 11, 0.08)',
                 border: `1px solid ${activeUser.kyc_status === 'approved' 
                   ? 'rgba(34, 197, 94, 0.25)' 
                   : activeUser.kyc_status === 'rejected' 
                     ? 'rgba(239, 68, 68, 0.25)' 
-                    : 'rgba(245, 158, 11, 0.25)'}`,
+                    : activeUser.kyc_status === 'pending'
+                      ? 'rgba(56, 189, 248, 0.25)'
+                      : 'rgba(245, 158, 11, 0.25)'}`,
                 padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
-                color: activeUser.kyc_status === 'approved' ? '#4ade80' : activeUser.kyc_status === 'rejected' ? '#f87171' : '#fbbf24',
-                cursor: activeUser.kyc_status === 'approved' ? 'default' : 'pointer'
+                color: activeUser.kyc_status === 'approved' ? '#4ade80' : activeUser.kyc_status === 'rejected' ? '#f87171' : activeUser.kyc_status === 'pending' ? '#38bdf8' : '#fbbf24',
+                cursor: activeUser.kyc_status === 'approved' || activeUser.kyc_status === 'pending' ? 'default' : 'pointer'
               }}
-              title={activeUser.kyc_status !== 'approved' ? 'Pulsa para completar verificación de identidad' : ''}
+              title={activeUser.kyc_status !== 'approved' && activeUser.kyc_status !== 'pending' ? 'Pulsa para completar verificación de identidad' : ''}
             >
               {activeUser.kyc_status === 'approved' ? <Check size={13} /> : activeUser.kyc_status === 'rejected' ? <AlertCircle size={13} /> : <Clock size={13} />}
-              KYC {activeUser.kyc_status === 'approved' ? 'Verificado' : activeUser.kyc_status === 'rejected' ? 'Rechazado (Reintentar)' : 'Por Verificar'}
+              KYC {activeUser.kyc_status === 'approved' ? 'Verificado' : activeUser.kyc_status === 'rejected' ? 'Rechazado (Reintentar)' : activeUser.kyc_status === 'pending' ? 'En Revisión' : 'Por Verificar'}
             </button>
           </div>
         </div>
