@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   },
 };
 
+import GlobalSupportChat from '@/components/GlobalSupportChat';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +26,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <GlobalSupportChat />
+      </body>
     </html>
   );
 }

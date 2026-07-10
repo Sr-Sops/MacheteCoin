@@ -31,7 +31,8 @@ export default function Dashboard() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editEmail, setEditEmail] = useState('');
-  const [editPhone, setEditPhone] = useState('');
+  const [editPhoneCode, setEditPhoneCode] = useState('+34');
+  const [editPhoneNum, setEditPhoneNum] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
@@ -84,7 +85,26 @@ export default function Dashboard() {
     setEditFirstName(u.first_name || '');
     setEditLastName(u.last_name || '');
     setEditEmail(u.email || '');
-    setEditPhone(u.phone || '');
+    let pCode = '+34';
+    let pNum = u.phone || '';
+    if (u.phone && u.phone.includes(' ')) {
+      const parts = u.phone.split(' ');
+      pCode = parts[0];
+      pNum = parts.slice(1).join('').replace(/[^0-9]/g, '');
+    } else if (u.phone && u.phone.startsWith('+')) {
+      if (u.phone.startsWith('+34')) { pCode = '+34'; pNum = u.phone.substring(3); }
+      else if (u.phone.startsWith('+52')) { pCode = '+52'; pNum = u.phone.substring(3); }
+      else if (u.phone.startsWith('+54')) { pCode = '+54'; pNum = u.phone.substring(3); }
+      else if (u.phone.startsWith('+57')) { pCode = '+57'; pNum = u.phone.substring(3); }
+      else if (u.phone.startsWith('+33')) { pCode = '+33'; pNum = u.phone.substring(3); }
+      else if (u.phone.startsWith('+49')) { pCode = '+49'; pNum = u.phone.substring(3); }
+      else if (u.phone.startsWith('+1')) { pCode = '+1'; pNum = u.phone.substring(2); }
+      else pNum = u.phone.replace(/[^0-9]/g, '');
+    } else {
+      pNum = u.phone ? u.phone.replace(/[^0-9]/g, '') : '';
+    }
+    setEditPhoneCode(pCode);
+    setEditPhoneNum(pNum);
     setEditBirthDate(u.birth_date || '');
     setEditUsername(u.username || '');
     setAvatarBase64(u.avatar_url || null);
@@ -144,11 +164,29 @@ export default function Dashboard() {
     setProfileLoading(true);
     setProfileMessage({ text: '', type: 'success' });
 
+    if (newPassword) {
+      if (newPassword.length < 8) {
+        setProfileMessage({ text: 'La nueva contraseña debe tener al menos 8 caracteres.', type: 'error' });
+        setProfileLoading(false);
+        return;
+      }
+      const hasUppercase = /[A-Z]/.test(newPassword);
+      const hasLowercase = /[a-z]/.test(newPassword);
+      const hasNumbers = /\d/.test(newPassword);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+      
+      if (!hasUppercase || !hasLowercase || !hasNumbers || !hasSpecialChar) {
+        setProfileMessage({ text: 'La nueva contraseña debe incluir mayúsculas, minúsculas, números y al menos un carácter especial.', type: 'error' });
+        setProfileLoading(false);
+        return;
+      }
+    }
+
     // Build update data
     const updateData: Partial<Profile> = {
       first_name: editFirstName,
       last_name: editLastName,
-      phone: editPhone,
+      phone: `${editPhoneCode} ${editPhoneNum}`.trim(),
       birth_date: editBirthDate,
       username: editUsername,
       avatar_url: avatarBase64
@@ -760,13 +798,52 @@ export default function Dashboard() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label htmlFor="phone" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Teléfono Móvil</label>
-                  <input 
-                    type="text" 
-                    id="phone"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
-                  />
+                  <div style={{
+                    display: 'flex',
+                    background: 'rgba(0,0,0,0.25)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                  }}>
+                    <select 
+                      value={editPhoneCode}
+                      onChange={(e) => setEditPhoneCode(e.target.value)}
+                      style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        border: 'none',
+                        borderRight: '1px solid rgba(255,255,255,0.06)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                        padding: '0 0.75rem',
+                        outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="+34" style={{ background: '#080F0C' }}>🇪🇸 +34</option>
+                      <option value="+1" style={{ background: '#080F0C' }}>🇺🇸 +1</option>
+                      <option value="+52" style={{ background: '#080F0C' }}>🇲🇽 +52</option>
+                      <option value="+54" style={{ background: '#080F0C' }}>🇦🇷 +54</option>
+                      <option value="+57" style={{ background: '#080F0C' }}>🇨🇴 +57</option>
+                      <option value="+33" style={{ background: '#080F0C' }}>🇫🇷 +33</option>
+                      <option value="+49" style={{ background: '#080F0C' }}>🇩🇪 +49</option>
+                    </select>
+                    <input 
+                      type="tel" 
+                      id="phone"
+                      placeholder="654 321 098"
+                      value={editPhoneNum}
+                      onChange={(e) => setEditPhoneNum(e.target.value.replace(/[^0-9]/g, ''))}
+                      style={{ 
+                        background: 'transparent', 
+                        border: 'none', 
+                        padding: '0.65rem 0.9rem', 
+                        color: 'var(--text-primary)', 
+                        outline: 'none',
+                        width: '100%',
+                        fontSize: '0.9rem'
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -791,11 +868,14 @@ export default function Dashboard() {
                     <input 
                       type="password" 
                       id="newpass"
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', outline: 'none' }}
                     />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                      Debe incluir mayúsculas, minúsculas, números y al menos un carácter especial.
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1080,10 +1160,9 @@ export default function Dashboard() {
             </div>
 
             <div style={{ background: '#fff', padding: '0.75rem', borderRadius: '8px', display: 'inline-block', margin: '0 auto' }}>
-              {/* Standard mock QR code from Google APIs */}
-              <Image 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=otpauth://totp/MacheteCoin:${editEmail}?secret=${twoFaSecret}&issuer=MacheteCoin`} 
-                alt="QR 2FA" width={130} height={130} 
+              <QRCodeSVG 
+                value={`otpauth://totp/MacheteCoin:${editEmail}?secret=${twoFaSecret}&issuer=MacheteCoin`}
+                size={130}
               />
             </div>
 

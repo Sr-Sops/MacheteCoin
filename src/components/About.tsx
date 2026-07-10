@@ -34,9 +34,10 @@ export default function About() {
               aspectRatio: '1',
               filter: 'drop-shadow(0 20px 40px rgba(255, 199, 0, 0.2))',
               animation: 'float-slow 6s ease-in-out infinite',
+              marginTop: '-3rem',
             }}>
               <Image 
-                src="/logo-pagina.png" 
+                src="/logo-transparente.png" 
                 alt="MacheteCoin Logotipo" 
                 fill
                 style={{ objectFit: 'contain' }}
@@ -58,78 +59,92 @@ export default function About() {
                 **MacheteCoin** no es solo otro meme; es un movimiento para abrir un sendero despejado, honesto y lleno de risas en el mercado DeFi. Con nuestro machete en alto, cortamos las tarifas abusivas y las promesas vacías para forjar un refugio seguro y próspero para los amantes de las meme coins.
               </p>
             </div>
+          </div>
 
-            {/* Features Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }} className="about-features">
+        </div>
+
+        {/* Features Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', marginTop: '4rem' }} className="about-features">
               
-              <div className="glass-panel feature-card" style={{ 
-                padding: '1.5rem', 
-                borderRadius: '16px', 
+              <div className="feature-card" style={{ 
+                padding: '1.75rem', 
+                borderRadius: '20px', 
                 display: 'flex', 
                 flexDirection: 'column',
-                gap: '1rem', 
+                gap: '1.25rem', 
                 alignItems: 'flex-start',
-                border: '1px solid rgba(255, 199, 0, 0.08)',
-                background: 'rgba(255,255,255,0.01)',
-                transition: 'all 0.3s ease',
-                height: '100%'
+                border: '1px solid rgba(239, 68, 68, 0.15)',
+                background: 'linear-gradient(145deg, rgba(239, 68, 68, 0.03) 0%, rgba(10, 15, 12, 0.8) 100%)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                height: '100%',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '0.65rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                  <ShieldAlert size={22} style={{ color: '#ef4444' }} />
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.25)', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.15)' }}>
+                  <ShieldAlert size={24} style={{ color: '#ef4444' }} />
                 </div>
-                <div>
-                  <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '0.4rem', fontWeight: 700 }}>Anti-Maleza</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>Contrato renunciado y liquidez bloqueada para siempre. Sin trucos, sin puertas traseras.</p>
+                <div style={{ zIndex: 1 }}>
+                  <h4 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.02em' }}>Anti-Maleza</h4>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>Contrato renunciado y liquidez bloqueada para siempre. Sin trucos, sin puertas traseras.</p>
                 </div>
               </div>
 
-              <div className="glass-panel feature-card" style={{ 
-                padding: '1.5rem', 
-                borderRadius: '16px', 
+              <div className="feature-card" style={{ 
+                padding: '1.75rem', 
+                borderRadius: '20px', 
                 display: 'flex', 
                 flexDirection: 'column',
-                gap: '1rem', 
+                gap: '1.25rem', 
                 alignItems: 'flex-start',
-                border: '1px solid rgba(255, 199, 0, 0.08)',
-                background: 'rgba(255,255,255,0.01)',
-                transition: 'all 0.3s ease',
-                height: '100%'
+                border: '1px solid rgba(255, 199, 0, 0.15)',
+                background: 'linear-gradient(145deg, rgba(255, 199, 0, 0.03) 0%, rgba(10, 15, 12, 0.8) 100%)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                height: '100%',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <div style={{ background: 'rgba(255, 199, 0, 0.08)', padding: '0.65rem', borderRadius: '10px', border: '1px solid rgba(255, 199, 0, 0.2)' }}>
-                  <Compass size={22} style={{ color: 'var(--color-gold)' }} />
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(255, 199, 0, 0.1) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+                <div style={{ background: 'rgba(255, 199, 0, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(255, 199, 0, 0.25)', boxShadow: '0 4px 15px rgba(255, 199, 0, 0.15)' }}>
+                  <Compass size={24} style={{ color: 'var(--color-gold)' }} />
                 </div>
-                <div>
-                  <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '0.4rem', fontWeight: 700 }}>El Sendero</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>Guiado 100% por la comunidad de poseedores de Machete. El carpincho obedece al pueblo.</p>
+                <div style={{ zIndex: 1 }}>
+                  <h4 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.02em' }}>El Sendero</h4>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>Guiado 100% por la comunidad de poseedores de Machete. El carpincho obedece al pueblo.</p>
                 </div>
               </div>
 
-              <div className="glass-panel feature-card" style={{ 
-                padding: '1.5rem', 
-                borderRadius: '16px', 
+              <div className="feature-card" style={{ 
+                padding: '1.75rem', 
+                borderRadius: '20px', 
                 display: 'flex', 
                 flexDirection: 'column',
-                gap: '1rem', 
+                gap: '1.25rem', 
                 alignItems: 'flex-start',
-                border: '1px solid rgba(255, 199, 0, 0.08)',
-                background: 'rgba(255,255,255,0.01)',
-                transition: 'all 0.3s ease',
-                height: '100%'
+                border: '1px solid rgba(0, 255, 102, 0.15)',
+                background: 'linear-gradient(145deg, rgba(0, 255, 102, 0.03) 0%, rgba(10, 15, 12, 0.8) 100%)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                height: '100%',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <div style={{ background: 'rgba(0, 255, 102, 0.08)', padding: '0.65rem', borderRadius: '10px', border: '1px solid rgba(0, 255, 102, 0.2)' }}>
-                  <Sparkles size={22} style={{ color: 'var(--color-green-neon)' }} />
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(0, 255, 102, 0.1) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+                <div style={{ background: 'rgba(0, 255, 102, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(0, 255, 102, 0.25)', boxShadow: '0 4px 15px rgba(0, 255, 102, 0.15)' }}>
+                  <Sparkles size={24} style={{ color: 'var(--color-green-neon)' }} />
                 </div>
-                <div>
-                  <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '0.4rem', fontWeight: 700 }}>Diversión Cortante</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>Memes afilados diarios, eventos de comunidad e integraciones de mini-juegos próximamente.</p>
+                <div style={{ zIndex: 1 }}>
+                  <h4 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.02em' }}>Diversión Cortante</h4>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>Memes afilados diarios, eventos de comunidad e integraciones de mini-juegos próximamente.</p>
                 </div>
               </div>
 
             </div>
-
-          </div>
-
-        </div>
 
       </div>
 

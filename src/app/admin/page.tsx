@@ -6,13 +6,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService, Profile, CoinSettings, RoadmapPhase } from '@/lib/supabase';
 import { ArrowLeft, Shield, Save, Loader2, Settings, MessageSquare, ListTodo, CheckCircle } from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import AdminSupportChats from '@/components/AdminSupportChats';
 
 export default function AdminPanel() {
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
   const [settings, setSettings] = useState<CoinSettings | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
-  const [activeTab, setActiveTab] = useState<'coin' | 'socials' | 'roadmap' | 'users'>('coin');
+  const [activeTab, setActiveTab] = useState<'coin' | 'socials' | 'roadmap' | 'users' | 'support'>('coin');
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -147,24 +150,12 @@ export default function AdminPanel() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
       {/* Admin header */}
-      <header style={{
-        background: 'rgba(8, 17, 12, 0.95)',
-        borderBottom: '1px solid rgba(255, 199, 0, 0.15)',
-        padding: '1rem 0',
-      }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }} className="nav-link">
-            <ArrowLeft size={16} />
-            Volver a la Web
-          </Link>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)', fontWeight: 700 }}>
-            <Shield size={20} />
-            <span>MacheteCoin Admin Panel</span>
-          </div>
-        </div>
-      </header>
-
+      {/* Standard Header */}
+      <Header 
+        twitterUrl={twitterUrl} 
+        telegramUrl={telegramUrl} 
+        discordUrl={discordUrl} 
+      />
       {/* Main body */}
       <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
@@ -264,7 +255,23 @@ export default function AdminPanel() {
             }}
           >
             <Shield size={16} style={{ marginRight: '0.25rem' }} />
-            Gestión de Usuarios
+            Usuarios y KYC
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('support')}
+            className="btn"
+            style={{
+              background: activeTab === 'support' ? 'rgba(255, 199, 0, 0.1)' : 'transparent',
+              color: activeTab === 'support' ? 'var(--color-gold)' : 'var(--text-secondary)',
+              border: activeTab === 'support' ? '1px solid rgba(255, 199, 0, 0.3)' : 'none',
+              padding: '0.5rem 1rem',
+              fontSize: '0.9rem',
+              borderRadius: '8px',
+            }}
+          >
+            <MessageSquare size={16} style={{ marginRight: '0.25rem' }} />
+            Soporte (Chats)
           </button>
         </div>
 
@@ -558,9 +565,21 @@ export default function AdminPanel() {
             </div>
           )}
 
+          {/* Tab 5: Support Chats */}
+          {activeTab === 'support' && (
+            <AdminSupportChats />
+          )}
+
         </div>
 
       </main>
+
+      {/* Standard Footer */}
+      <Footer 
+        twitterUrl={twitterUrl} 
+        telegramUrl={telegramUrl} 
+        discordUrl={discordUrl} 
+      />
 
       <style jsx global>{`
         .admin-grid {

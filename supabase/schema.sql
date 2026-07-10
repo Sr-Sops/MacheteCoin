@@ -387,3 +387,82 @@ ON public.kyc_sessions FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Anyone can update their own session" ON public.kyc_sessions;
 CREATE POLICY "Anyone can update their own session" 
 ON public.kyc_sessions FOR UPDATE USING (true);
+
+-- 9. Support Chats Table
+CREATE TABLE IF NOT EXISTS public.support_chats (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.support_chats ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own chats" ON public.support_chats;
+CREATE POLICY "Users can view own chats" ON public.support_chats FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own chats" ON public.support_chats;
+CREATE POLICY "Users can insert own chats" ON public.support_chats FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own chats" ON public.support_chats;
+CREATE POLICY "Users can update own chats" ON public.support_chats FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view all chats" ON public.support_chats;
+CREATE POLICY "Admins can view all chats" ON public.support_chats FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Admins can update all chats" ON public.support_chats;
+CREATE POLICY "Admins can update all chats" ON public.support_chats FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 10. Support Messages Table
+CREATE TABLE IF NOT EXISTS public.support_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    chat_id UUID REFERENCES public.support_chats(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.support_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view messages of own chats" ON public.support_messages;
+CREATE POLICY "Users can view messages of own chats" ON public.support_messages FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.support_chats WHERE support_chats.id = chat_id AND support_chats.user_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "Users can insert messages to own chats" ON public.support_messages;
+CREATE POLICY "Users can insert messages to own chats" ON public.support_messages FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.support_chats WHERE support_chats.id = chat_id AND support_chats.user_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "Admins can view all messages" ON public.support_messages;
+CREATE POLICY "Admins can view all messages" ON public.support_messages FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Admins can insert any message" ON public.support_messages;
+CREATE POLICY "Admins can insert any message" ON public.support_messages FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- Enable Realtime for support_chats and support_messages
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'support_messages'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE support_messages;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND tablename = 'support_chats'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE support_chats;
+    END IF;
+END $$;

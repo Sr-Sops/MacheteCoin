@@ -81,6 +81,22 @@ export interface SwapTx {
   created_at: string;
 }
 
+export interface SupportChat {
+  id: string;
+  user_id: string;
+  status: 'open' | 'closed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  message: string;
+  created_at: string;
+}
+
 // ----------------------------------------------------
 // LOCAL STORAGE MOCK CLIENT
 // ----------------------------------------------------
@@ -345,9 +361,8 @@ export const MacheteService = {
           password: password || 'machete-default-pass-change-me',
         });
         if (error) {
-          console.error("Supabase signIn raw error object:", error);
-          console.error("Supabase signIn raw error JSON:", JSON.stringify(error));
-          return { success: false, error: error.message || JSON.stringify(error) || 'Error de inicio de sesión' };
+          // console.error removed to avoid Next.js dev server red overlay on invalid login
+          return { success: false, error: error.message || 'Error de inicio de sesión' };
         }
         return { success: true, user: data.user };
       } catch (err: any) {

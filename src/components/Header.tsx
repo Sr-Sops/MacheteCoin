@@ -61,17 +61,17 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
           <div style={{ position: 'relative', width: '40px', height: '40px' }}>
-            <Image 
-              src="/logo-oficial.png" 
-              alt="MacheteCoin logo" 
+            <Image
+              src="/logo-transparente.png"
+              alt="MacheteCoin logo"
               fill
               style={{ objectFit: 'contain' }}
             />
           </div>
-          <span style={{ 
-            fontFamily: 'var(--font-title)', 
-            fontWeight: 700, 
-            fontSize: '1.25rem', 
+          <span style={{
+            fontFamily: 'var(--font-title)',
+            fontWeight: 700,
+            fontSize: '1.25rem',
             background: 'linear-gradient(135deg, #fff 30%, var(--color-gold) 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -94,12 +94,12 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginRight: '0.5rem' }}>
             {twitterUrl && (
               <a href={twitterUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="social-hover">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
               </a>
             )}
             {telegramUrl && (
               <a href={telegramUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="social-hover">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.62.15-.15 2.7-2.48 2.75-2.7.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.25-.02-.11.02-1.84 1.16-5.2 3.43-.49.34-.94.5-1.34.49-.44-.01-1.3-.25-1.93-.46-.78-.25-1.4-.39-1.35-.83.03-.23.35-.46.96-.71 3.76-1.63 6.27-2.71 7.53-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.16.13.11.17.26.19.37 0 .07.01.21 0 .33z"/></svg>
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.62.15-.15 2.7-2.48 2.75-2.7.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.25-.02-.11.02-1.84 1.16-5.2 3.43-.49.34-.94.5-1.34.49-.44-.01-1.3-.25-1.93-.46-.78-.25-1.4-.39-1.35-.83.03-.23.35-.46.96-.71 3.76-1.63 6.27-2.71 7.53-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.16.13.11.17.26.19.37 0 .07.01.21 0 .33z" /></svg>
               </a>
             )}
           </div>
@@ -130,8 +130,8 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
         </div>
 
         {/* Mobile Menu Icon */}
-        <button 
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           style={{ display: 'flex', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
           className="md-none"
         >
@@ -156,29 +156,29 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
           gap: '1.5rem',
           zIndex: 99,
         }}>
-          <Link 
-            href="#lore" 
+          <Link
+            href="#lore"
             onClick={() => setMobileMenuOpen(false)}
             style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
           >
             Sobre Nosotros
           </Link>
-          <Link 
-            href="#tokenomics" 
+          <Link
+            href="#tokenomics"
             onClick={() => setMobileMenuOpen(false)}
             style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
           >
             Tokenomics
           </Link>
-          <Link 
-            href="#comprar" 
+          <Link
+            href="#comprar"
             onClick={() => setMobileMenuOpen(false)}
             style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
           >
             Cómo Comprar
           </Link>
-          <Link 
-            href="#roadmap" 
+          <Link
+            href="#roadmap"
             onClick={() => setMobileMenuOpen(false)}
             style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}
           >
@@ -191,12 +191,12 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl }: HeaderPr
           <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
             {twitterUrl && (
               <a href={twitterUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
               </a>
             )}
             {telegramUrl && (
               <a href={telegramUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.62.15-.15 2.7-2.48 2.75-2.7.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.25-.02-.11.02-1.84 1.16-5.2 3.43-.49.34-.94.5-1.34.49-.44-.01-1.3-.25-1.93-.46-.78-.25-1.4-.39-1.35-.83.03-.23.35-.46.96-.71 3.76-1.63 6.27-2.71 7.53-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.16.13.11.17.26.19.37 0 .07.01.21 0 .33z"/></svg>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.62.15-.15 2.7-2.48 2.75-2.7.01-.03.01-.14-.06-.2-.07-.06-.17-.04-.25-.02-.11.02-1.84 1.16-5.2 3.43-.49.34-.94.5-1.34.49-.44-.01-1.3-.25-1.93-.46-.78-.25-1.4-.39-1.35-.83.03-.23.35-.46.96-.71 3.76-1.63 6.27-2.71 7.53-3.23 3.58-1.48 4.32-1.74 4.81-1.75.11 0 .35.03.5.16.13.11.17.26.19.37 0 .07.01.21 0 .33z" /></svg>
               </a>
             )}
           </div>
