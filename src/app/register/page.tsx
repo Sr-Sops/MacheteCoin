@@ -32,6 +32,11 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // DUPLICATION ERROR STATES
+  const [emailError, setEmailError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  
   // POPUP MODALS STATE
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -211,8 +216,11 @@ export default function Register() {
   };
 
   // STEP NAVIGATION & VALIDATIONS
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     setError('');
+    setEmailError('');
+    setUsernameError('');
+    setPhoneError('');
     
     if (step === 1) {
       if (!email || !password) {
@@ -227,12 +235,43 @@ export default function Register() {
         setError('Debes aceptar los Términos y Condiciones.');
         return;
       }
+
+      setLoading(true);
+      const isEmailDuplicated = await MacheteService.checkDuplicateField('email', email);
+      setLoading(false);
+
+      if (isEmailDuplicated) {
+        setEmailError('Este correo electrónico ya está registrado.');
+        return;
+      }
+
       setStep(2);
     } else if (step === 2) {
       if (!username || !firstName || !lastName || !phoneNum || !birthDate) {
         setError('Por favor, rellena todos los datos personales.');
         return;
       }
+
+      setLoading(true);
+      const isUsernameDuplicated = await MacheteService.checkDuplicateField('username', username);
+      const fullPhone = `${phoneCode} ${phoneNum}`;
+      const isPhoneDuplicated = await MacheteService.checkDuplicateField('phone', fullPhone);
+      setLoading(false);
+
+      let hasDuplicateError = false;
+      if (isUsernameDuplicated) {
+        setUsernameError('Este nombre de usuario ya está registrado.');
+        hasDuplicateError = true;
+      }
+      if (isPhoneDuplicated) {
+        setPhoneError('Este número de teléfono ya está registrado.');
+        hasDuplicateError = true;
+      }
+
+      if (hasDuplicateError) {
+        return;
+      }
+
       if (!phoneVerified && !isAdminSetup) {
         setError('Debes verificar tu número de teléfono móvil mediante el código SMS antes de continuar.');
         return;
@@ -505,7 +544,7 @@ export default function Register() {
                 display: 'flex',
                 alignItems: 'center',
                 background: 'rgba(0,0,0,0.25)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: emailError ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '8px',
                 padding: '0.7rem 1rem',
                 gap: '0.75rem',
@@ -517,7 +556,7 @@ export default function Register() {
                   required
                   placeholder="ejemplo@machetecoin.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -528,6 +567,11 @@ export default function Register() {
                   }}
                 />
               </div>
+              {emailError && (
+                <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '-0.25rem', paddingLeft: '0.25rem' }}>
+                  {emailError}
+                </span>
+              )}
             </div>
 
             {/* Password Input */}
@@ -640,7 +684,7 @@ export default function Register() {
                 display: 'flex',
                 alignItems: 'center',
                 background: 'rgba(0,0,0,0.25)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: usernameError ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '8px',
                 padding: '0.7rem 1rem',
                 gap: '0.75rem',
@@ -652,7 +696,7 @@ export default function Register() {
                   required
                   placeholder="ej. MacheteKing"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => { setUsername(e.target.value); setUsernameError(''); }}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -663,6 +707,11 @@ export default function Register() {
                   }}
                 />
               </div>
+              {usernameError && (
+                <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '-0.25rem', paddingLeft: '0.25rem' }}>
+                  {usernameError}
+                </span>
+              )}
             </div>
 
             {/* First Name & Last Name Row */}
@@ -724,7 +773,7 @@ export default function Register() {
                 <div style={{
                   display: 'flex',
                   background: 'rgba(0,0,0,0.25)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  border: phoneError ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.06)',
                   borderRadius: '8px',
                   overflow: 'hidden',
                   flex: 1
@@ -759,7 +808,7 @@ export default function Register() {
                     required
                     placeholder="654 321 098"
                     value={phoneNum}
-                    onChange={(e) => setPhoneNum(e.target.value.replace(/[^0-9]/g, ''))}
+                    onChange={(e) => { setPhoneNum(e.target.value.replace(/[^0-9]/g, '')); setPhoneError(''); }}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -801,6 +850,11 @@ export default function Register() {
                   )}
                 </button>
               </div>
+              {phoneError && (
+                <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '-0.25rem', paddingLeft: '0.25rem' }}>
+                  {phoneError}
+                </span>
+              )}
             </div>
 
             {/* Birth Date Input */}

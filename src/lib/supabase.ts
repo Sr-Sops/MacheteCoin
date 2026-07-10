@@ -645,6 +645,37 @@ export const MacheteService = {
     }
   },
 
+  checkDuplicateField: async (field: 'email' | 'username' | 'phone', value: string) => {
+    MacheteService.init();
+    if (!value) return false;
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        let query = supabaseClient.from('profiles').select('id');
+        if (field === 'email') {
+          query = query.eq('email', value);
+        } else if (field === 'username') {
+          query = query.eq('username', value);
+        } else if (field === 'phone') {
+          query = query.eq('phone', value);
+        }
+        const { data } = await query.maybeSingle();
+        return !!data;
+      } catch (err) {
+        return false;
+      }
+    } else {
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      if (field === 'email') {
+        return profiles.some((p) => p.email?.toLowerCase() === value.toLowerCase());
+      } else if (field === 'username') {
+        return profiles.some((p) => p.username.toLowerCase() === value.toLowerCase());
+      } else if (field === 'phone') {
+        return profiles.some((p) => p.phone === value);
+      }
+      return false;
+    }
+  },
+
   resetPasswordByRecovery: async (target: string, words: string, newPass: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
