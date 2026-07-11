@@ -138,8 +138,8 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
           })()}
 
           {/* Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }} className="hero-buttons">
-            <a href={raydiumUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: '1.05rem', padding: '1rem 2rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '420px' }} className="hero-buttons">
+            <a href={raydiumUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: '1.05rem', padding: '1rem 2rem', width: '100%', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 Comprar <Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1em', height: '1em' }} /> MacheteCoin
               </div>
