@@ -84,7 +84,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                maxWidth: '520px',
+                maxWidth: '600px',
                 width: '100%',
                 margin: '0.5rem auto',
                 boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
@@ -138,7 +138,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
           })()}
 
           {/* Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '420px' }} className="hero-buttons">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '600px', margin: '0 auto' }} className="hero-buttons">
             <a href={raydiumUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: '1.05rem', padding: '1rem 2rem', width: '100%', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 Comprar <Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1em', height: '1em' }} /> MacheteCoin
@@ -232,7 +232,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
             font-size: 3.75rem !important;
           }
           .hero-buttons {
-            align-items: flex-start !important;
+            align-items: stretch !important;
           }
           .social-buttons-container {
             justify-content: flex-start !important;
