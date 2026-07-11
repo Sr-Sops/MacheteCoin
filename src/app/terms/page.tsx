@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, ShieldAlert, Scale, HelpCircle } from 'lucide-react';
 
 export default function TermsAndConditions() {
@@ -57,7 +58,7 @@ export default function TermsAndConditions() {
           <div>
             <h4 style={{ color: '#f87171', fontSize: '1rem', margin: '0 0 0.25rem 0', fontWeight: 600 }}>INFORMACIÓN DE ALTO RIESGO</h4>
             <p style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              MacheteCoin ($MACHETE) es un token de tipo meme creado exclusivamente con fines de entretenimiento y diversión comunitaria. No tiene utilidad práctica, respaldo financiero ni garantía de valor intrínseco. No arriesgues fondos que no puedas permitirte perder por completo.
+              MacheteCoin (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span>) es un token de tipo meme creado exclusivamente con fines de entretenimiento y diversión comunitaria. No tiene utilidad práctica, respaldo financiero ni garantía de valor intrínseco. No arriesgues fondos que no puedas permitirte perder por completo.
             </p>
           </div>
         </div>
@@ -76,10 +77,10 @@ export default function TermsAndConditions() {
 
           <section>
             <h3 style={{ color: 'var(--color-gold)', fontSize: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
-              2. Naturaleza del Token $MACHETE
+              2. Naturaleza del Token <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1em', height: '1em' }} />MACHETE</span>
             </h3>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-              El token $MACHETE es una moneda de broma (&quot;meme coin&quot;). No constituye una inversión, un valor financiero (security), un contrato de inversión ni confiere derechos de voto ni de participación en ninguna empresa. La adquisición de $MACHETE no debe realizarse con la expectativa de obtener plusvalías o beneficios financieros.
+              El token <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span> es una moneda de broma (&quot;meme coin&quot;). No constituye una inversión, un valor financiero (security), un contrato de inversión ni confiere derechos de voto ni de participación en ninguna empresa. La adquisición de <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span> no debe realizarse con la expectativa de obtener plusvalías o beneficios financieros.
             </p>
           </section>
 
@@ -101,7 +102,7 @@ export default function TermsAndConditions() {
             </p>
             <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
               <li>Tu acceso o uso (o incapacidad de acceder o usar) el Sitio.</li>
-              <li>Cualquier fluctuación de precio drástica del token $MACHETE en mercados secundarios descentralizados (DEX).</li>
+              <li>Cualquier fluctuación de precio drástica del token <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span> en mercados secundarios descentralizados (DEX).</li>
               <li>Fallas tecnológicas, ataques maliciosos o exploits en los contratos inteligentes o en el Sitio.</li>
             </ul>
           </section>

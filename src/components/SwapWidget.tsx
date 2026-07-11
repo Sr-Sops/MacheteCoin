@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { MacheteService, Profile, CoinSettings, getNativeToken } from '@/lib/supabase';
 import { ArrowDown, Info, HelpCircle, CheckCircle2, Copy, Check, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -109,7 +110,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
           </div>
           <div>
             <h4 style={{ fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>¡Intercambio Completado!</h4>
-            <p style={{ fontSize: '0.9rem' }}>Los tokens $MACHETE han sido abonados en tu cuenta.</p>
+            <p style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2em' }}>Los tokens <Image src="/logo-oficial.png" alt="$" width={16} height={16} style={{ width: '1em', height: '1em' }} />MACHETE han sido abonados en tu cuenta.</p>
           </div>
 
           <div style={{
@@ -136,7 +137,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
 
           {user && (
             <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-              Tu nuevo saldo: <span style={{ color: 'var(--color-gold)', fontWeight: 700 }}>{user.machete_balance.toLocaleString()} $MACHETE</span>
+              Tu nuevo saldo: <span style={{ color: 'var(--color-gold)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>{user.machete_balance.toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={16} height={16} style={{ width: '1em', height: '1em' }} />MACHETE</span>
             </div>
           )}
 
@@ -217,7 +218,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
               <span>Recibes (Estimado)</span>
               {user && (
-                <span>Saldo: <span style={{ color: 'var(--color-gold)' }}>{user.machete_balance.toLocaleString()} $MACHETE</span></span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>Saldo: <span style={{ color: 'var(--color-gold)', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>{user.machete_balance.toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span></span>
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -244,8 +245,11 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                 borderRadius: '8px',
                 fontWeight: 700,
                 fontSize: '0.9rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.2em'
               }}>
-                $MACHETE
+                <Image src="/logo-oficial.png" alt="$" width={16} height={16} style={{ width: '1.2em', height: '1.2em' }} />MACHETE
               </span>
             </div>
           </div>
@@ -254,7 +258,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Precio estimado</span>
-              <span>1 {fromToken} = {(fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate_usdt || 2500000)).toLocaleString()} $MACHETE</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>1 {fromToken} = {(fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate_usdt || 2500000)).toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Tolerancia de Deslizamiento (Slippage)</span>
@@ -291,7 +295,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                         <span>Operaciones Bloqueadas</span>
                       </div>
                       <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
-                        Para comprar, vender o retirar $MACHETE debes cumplir los siguientes requisitos en tu cuenta:
+                        Para comprar, vender o retirar <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em', margin: '0 0.2em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span> debes cumplir los siguientes requisitos en tu cuenta:
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem', marginTop: '0.15rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4ade80' }}>

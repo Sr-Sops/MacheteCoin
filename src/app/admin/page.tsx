@@ -350,7 +350,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate (Ratio $MACHETE por {getNativeToken(blockchainNetwork)})</label>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>Swap Rate (Ratio <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE por {getNativeToken(blockchainNetwork)})</label>
                   <input 
                     type="number" 
                     value={swapRate} 
@@ -360,7 +360,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Swap Rate USDT (Ratio $MACHETE por USDT)</label>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>Swap Rate USDT (Ratio <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE por USDT)</label>
                   <input 
                     type="number" 
                     value={swapRateUsdt} 

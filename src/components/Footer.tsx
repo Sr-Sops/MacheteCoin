@@ -115,7 +115,7 @@ export default function Footer({ twitterUrl, telegramUrl, discordUrl, instagramU
           gap: '1rem',
         }}>
           <p style={{ lineHeight: 1.6, maxWidth: '900px', margin: '0 auto' }}>
-            <strong>DESCARGO DE RESPONSABILIDAD:</strong> MacheteCoin ($MACHETE) es una moneda meme con fines de entretenimiento únicamente y no representa ningún tipo de consejo de inversión ni expectativa de ganancias financieras. Las criptomonedas y especialmente las memecoins conllevan un riesgo extremadamente alto. No arriesgues capital que no estés dispuesto a perder en su totalidad. El contrato y el código se proporcionan &quot;tal cual&quot; sin garantías.
+            <strong>DESCARGO DE RESPONSABILIDAD:</strong> MacheteCoin (<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span>) es una moneda meme con fines de entretenimiento únicamente y no representa ningún tipo de consejo de inversión ni expectativa de ganancias financieras. Las criptomonedas y especialmente las memecoins conllevan un riesgo extremadamente alto. No arriesgues capital que no estés dispuesto a perder en su totalidad. El contrato y el código se proporcionan &quot;tal cual&quot; sin garantías.
           </p>
           
           <p style={{ marginTop: '0.5rem' }}>

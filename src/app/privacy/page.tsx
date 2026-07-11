@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Eye, Database } from 'lucide-react';
 
@@ -75,7 +76,7 @@ export default function PrivacyPolicy() {
             <ul style={{ paddingLeft: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.95rem', margin: '0.5rem 0' }}>
               <li>Mantener activa e identificar de forma única tu sesión de usuario.</li>
               <li>Asociar tu clave pública enlazada a tu perfil y mostrarla en tu panel privado.</li>
-              <li>Calcular y reflejar correctamente tus saldos acumulados de $MACHETE en la interfaz y en tu base de datos de transacciones.</li>
+              <li>Calcular y reflejar correctamente tus saldos acumulados de <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span> en la interfaz y en tu base de datos de transacciones.</li>
               <li>Prevenir fraudes informáticos o abusos repetitivos en las funciones de la web.</li>
             </ul>
           </section>

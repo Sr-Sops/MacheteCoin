@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Wallet, Landmark, Shuffle, CheckCircle, ArrowRight } from 'lucide-react';
 
 interface HowToBuyProps {
@@ -34,7 +35,7 @@ export default function HowToBuy({ contractAddress, blockchainNetwork, raydiumUr
       desc: `Entra en QuickSwap.exchange o Uniswap utilizando el navegador integrado de tu billetera o conectando la extensión de navegador en tu ordenador. Conecta tu billetera haciendo clic en 'Connect Wallet'.`,
     },
     {
-      title: 'Intercambiar por $MACHETE',
+      title: <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>Intercambiar por <Image src="/logo-oficial.png" alt="$" width={16} height={16} style={{ width: '1em', height: '1em' }} />MACHETE</span>,
       icon: <CheckCircle size={24} />,
       desc: isAddressPlaceholder
         ? `Pega nuestra dirección de contrato oficial en el selector de tokens (se revelará aquí en esta sección al momento del lanzamiento). Ingresa la cantidad de MATIC o USDC que deseas intercambiar y presiona 'Swap'.`
@@ -48,7 +49,7 @@ export default function HowToBuy({ contractAddress, blockchainNetwork, raydiumUr
         
         <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }} className="gold-text-gradient">
-            Cómo Comprar $MACHETE
+            Cómo Comprar <Image src="/logo-oficial.png" alt="$" width={32} height={32} style={{ width: '1em', height: '1em', verticalAlign: 'middle', marginTop: '-0.1em' }} />MACHETE
           </h2>
           <p style={{ maxWidth: '600px', margin: '0 auto', fontSize: '1.05rem' }}>
             Sigue estos 4 sencillos pasos para asegurar tus tokens en la red oficial de {blockchainNetwork}.
