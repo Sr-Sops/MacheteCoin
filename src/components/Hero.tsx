@@ -145,7 +145,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
               </div>
               <ExternalLink size={18} />
             </a>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', width: '100%' }} className="social-buttons-container">
               {telegramUrl && (
                 <a href={telegramUrl} target="_blank" rel="noopener noreferrer" className="btn btn-green" style={{ fontSize: '1.05rem', padding: '1rem 2rem', flex: 1, textAlign: 'center', justifyContent: 'center' }}>
                   Telegram
@@ -232,7 +232,9 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
             font-size: 3.75rem !important;
           }
           .hero-buttons {
-            flex-direction: row !important;
+            align-items: flex-start !important;
+          }
+          .social-buttons-container {
             justify-content: flex-start !important;
           }
           .mascot-frame {
