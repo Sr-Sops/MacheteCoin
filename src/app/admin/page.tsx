@@ -638,7 +638,6 @@ export default function AdminPanel() {
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Rol</th>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>KYC Info</th>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Estado KYC</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Acciones KYC</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -675,26 +674,6 @@ export default function AdminPanel() {
                             }}>
                               {u.kyc_status === 'approved' ? 'Aprobado' : u.kyc_status === 'rejected' ? 'Rechazado' : 'Pendiente'}
                             </span>
-                          </td>
-                          <td style={{ padding: '0.75rem' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button 
-                                onClick={() => handleKycStatusUpdate(u.id, 'approved')}
-                                disabled={u.kyc_status === 'approved'}
-                                className="btn"
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'rgba(57,255,20,0.1)', color: 'var(--color-green-neon)', border: '1px solid rgba(57,255,20,0.2)' }}
-                              >
-                                Aprobar
-                              </button>
-                              <button 
-                                onClick={() => handleKycStatusUpdate(u.id, 'rejected')}
-                                disabled={u.kyc_status === 'rejected'}
-                                className="btn"
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
-                              >
-                                Rechazar
-                              </button>
-                            </div>
                           </td>
                         </tr>
                       ))}
