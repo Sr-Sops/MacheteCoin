@@ -410,7 +410,7 @@ export default function Register() {
         birthDate,
         documentId,
         role: isAdminSetup ? 'admin' : 'user',
-        kycStatus: isAdminSetup ? 'approved' : 'pending',
+        kycStatus: isAdminSetup || kycCompleted ? 'approved' : 'pending',
         kycDocumentType: documentType,
         kycDocumentUrl: kycSessionId ? `/kyc-session/${kycSessionId}` : undefined,
         avatarUrl: avatarBase64 || undefined,

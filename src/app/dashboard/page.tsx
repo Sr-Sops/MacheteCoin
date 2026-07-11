@@ -284,7 +284,7 @@ export default function Dashboard() {
     // Call service update for KYC status
     if (user) {
       const result = await MacheteService.updateProfile(user.id, {
-        kyc_status: 'pending',
+        kyc_status: 'approved', // Auto-approve instantly to simulate fast verification
         kyc_document_type: kycDocType,
         kyc_document_url: `/kyc-session/${kycSessionId}`,
         document_id: kycDocId
@@ -480,8 +480,11 @@ export default function Dashboard() {
 
             {/* Clickable KYC verification status badge */}
             <button 
-              onClick={() => activeUser.kyc_status !== 'approved' && activeUser.kyc_status !== 'pending' && setShowKycModal(true)}
-              disabled={activeUser.kyc_status === 'approved' || activeUser.kyc_status === 'pending'}
+              onClick={() => {
+                setKycSessionId('');
+                setKycCompleted(false);
+                setShowKycModal(true);
+              }}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                 background: activeUser.kyc_status === 'approved' 
