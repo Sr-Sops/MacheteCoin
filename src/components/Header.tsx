@@ -64,7 +64,7 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
           <div style={{ position: 'relative', width: '40px', height: '40px' }}>
             <Image
-              src="/logoMC-1024.png"
+              src="/logoMC-1024.jpg"
               alt="MacheteCoin logo"
               fill
               style={{ objectFit: 'contain' }}
