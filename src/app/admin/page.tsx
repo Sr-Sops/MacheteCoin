@@ -26,6 +26,10 @@ export default function AdminPanel() {
   const [promoteLoading, setPromoteLoading] = useState(false);
   const [promoteError, setPromoteError] = useState('');
 
+  // Users Management states
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+
   // Form states
   const [contractAddress, setContractAddress] = useState('');
   const [blockchainNetwork, setBlockchainNetwork] = useState('');
@@ -77,6 +81,11 @@ export default function AdminPanel() {
       setDexscreenerUrl(s.dexscreener_url);
       setRaydiumUrl(s.raydium_url);
 
+      // Load Users
+      const profiles = await MacheteService.getAllProfiles();
+      setAllUsers(profiles);
+      setUsersLoading(false);
+
       setLoading(false);
     };
     loadSessionAndData();
@@ -118,7 +127,21 @@ export default function AdminPanel() {
     });
     setSaving(false);
     if (result.success) {
-      showNotification('¡Enlaces sociales actualizados correctamente!');
+      showNotification('Enlace actualizado correctamente.');
+    }
+  };
+
+  const handleKycStatusUpdate = async (userId: string, newStatus: 'approved' | 'rejected') => {
+    try {
+      const result = await MacheteService.updateProfile(userId, { kyc_status: newStatus });
+      if (result.success) {
+        setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, kyc_status: newStatus } : u));
+        showNotification(`KYC actualizado a ${newStatus}`);
+      } else {
+        alert('Error al actualizar el KYC.');
+      }
+    } catch (err) {
+      alert('Error en la conexión.');
     }
   };
 
@@ -593,6 +616,99 @@ export default function AdminPanel() {
                   Hacer Administrador
                 </button>
               </form>
+
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
+
+              <h3 style={{ fontSize: '1.25rem', color: 'var(--color-gold)' }}>Gestión de Usuarios y KYC</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Visualiza y gestiona las cuentas registradas y aprueba o rechaza sus documentos KYC.
+              </p>
+
+              {usersLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                  <Loader2 className="spin-logo" style={{ color: 'var(--color-gold)' }} />
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--color-gold)' }}>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Usuario</th>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Email</th>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Rol</th>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>KYC Info</th>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Estado KYC</th>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Acciones KYC</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allUsers.map((u) => (
+                        <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '0.75rem' }}>{u.username || 'Sin usuario'}</td>
+                          <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{u.email}</td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <span style={{ 
+                              background: u.role === 'admin' ? 'rgba(255,199,0,0.15)' : 'rgba(255,255,255,0.05)', 
+                              color: u.role === 'admin' ? 'var(--color-gold)' : 'var(--text-secondary)',
+                              padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', textTransform: 'uppercase'
+                            }}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {u.kyc_document_type ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                <span>{u.kyc_document_type}</span>
+                                {u.document_id && <span style={{ fontSize: '0.75rem' }}>ID: {u.document_id}</span>}
+                                {u.kyc_document_url && (
+                                  <a href={u.kyc_document_url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-green-neon)', textDecoration: 'underline', fontSize: '0.75rem' }}>
+                                    Ver Documento
+                                  </a>
+                                )}
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <span style={{
+                              color: u.kyc_status === 'approved' ? 'var(--color-green-neon)' : u.kyc_status === 'rejected' ? '#ef4444' : 'var(--color-gold)',
+                              fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.75rem'
+                            }}>
+                              {u.kyc_status === 'approved' ? 'Aprobado' : u.kyc_status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button 
+                                onClick={() => handleKycStatusUpdate(u.id, 'approved')}
+                                disabled={u.kyc_status === 'approved'}
+                                className="btn"
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'rgba(57,255,20,0.1)', color: 'var(--color-green-neon)', border: '1px solid rgba(57,255,20,0.2)' }}
+                              >
+                                Aprobar
+                              </button>
+                              <button 
+                                onClick={() => handleKycStatusUpdate(u.id, 'rejected')}
+                                disabled={u.kyc_status === 'rejected'}
+                                className="btn"
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                              >
+                                Rechazar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {allUsers.length === 0 && (
+                        <tr>
+                          <td colSpan={6} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                            No hay usuarios registrados.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

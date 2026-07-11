@@ -1091,22 +1091,33 @@ export default function Register() {
             )}
 
             {!scanning && (
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button 
-                  type="button" 
-                  onClick={handlePrevStep}
-                  className="btn" 
-                  style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  Volver
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button 
+                    type="button" 
+                    onClick={handlePrevStep}
+                    className="btn" 
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    Volver
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleNextStep}
+                    className="btn btn-gold" 
+                    style={{ flex: 2 }}
+                    disabled={!documentId}
+                  >
+                    Verificar y Continuar
+                  </button>
+                </div>
                 <button 
                   type="button" 
                   onClick={handleNextStep}
-                  className="btn btn-gold" 
-                  style={{ flex: 1 }}
+                  className="btn" 
+                  style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(255,255,255,0.2)', color: 'var(--text-secondary)' }}
                 >
-                  Verificar y Continuar
+                  Verificar más tarde (Completar Registro)
                 </button>
               </div>
             )}

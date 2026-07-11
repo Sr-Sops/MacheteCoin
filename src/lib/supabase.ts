@@ -618,6 +618,25 @@ export const MacheteService = {
     }
   },
 
+  getAllProfiles: async (): Promise<Profile[]> => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) return [];
+        return data as Profile[];
+      } catch (err) {
+        return [];
+      }
+    } else {
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      return profiles.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  },
+
   sendSmsOtp: async (phone: string) => {
     MacheteService.init();
     if (isRealSupabaseConfigured() && supabaseClient) {
