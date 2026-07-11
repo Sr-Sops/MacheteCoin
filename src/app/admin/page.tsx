@@ -669,7 +669,7 @@ export default function AdminPanel() {
                           </td>
                           <td style={{ padding: '0.75rem' }}>
                             <span style={{
-                              color: u.kyc_status === 'approved' ? 'var(--color-green-neon)' : u.kyc_status === 'rejected' ? '#ef4444' : (!u.document_id && !u.kyc_document_url) ? 'var(--text-secondary)' : 'var(--color-gold)',
+                              color: u.kyc_status === 'approved' ? 'var(--color-green-neon)' : u.kyc_status === 'rejected' ? '#ef4444' : (!u.document_id && !u.kyc_document_url) ? '#ef4444' : 'var(--color-gold)',
                               fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.75rem'
                             }}>
                               {u.kyc_status === 'approved' ? 'Aprobado' : u.kyc_status === 'rejected' ? 'Rechazado' : (!u.document_id && !u.kyc_document_url) ? 'Falta Verificación KYC' : 'Pendiente'}
