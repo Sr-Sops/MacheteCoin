@@ -578,9 +578,9 @@ export default function Dashboard() {
               </div>
               
               <div style={{ padding: '0.5rem 0' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>DISPONIBLE EN <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1.2em', height: '1.2em' }} />MACHETE</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>DISPONIBLE EN <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1.2em', height: '1.2em' }} /> MacheteCoin</span>
                 <h2 style={{ fontSize: '3rem', color: 'var(--text-primary)', fontFamily: 'var(--font-title)', marginTop: '0.25rem', overflowWrap: 'break-word' }}>
-                  {activeUser.machete_balance.toLocaleString()} <span style={{ color: 'var(--color-gold)', fontSize: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.1em' }}><Image src="/logo-oficial.png" alt="$" width={32} height={32} style={{ width: '1em', height: '1em' }} />MACHETE</span>
+                  {activeUser.machete_balance.toLocaleString()} <span style={{ color: 'var(--color-gold)', fontSize: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.1em' }}><Image src="/logo-oficial.png" alt="$" width={32} height={32} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
                 </h2>
               </div>
 
@@ -700,7 +700,7 @@ export default function Dashboard() {
                           {tx.from_amount} {tx.from_token}
                         </td>
                         <td style={{ color: 'var(--color-gold)', fontWeight: 700 }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>+{tx.to_amount.toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>+{tx.to_amount.toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
                         </td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1307,3 +1307,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

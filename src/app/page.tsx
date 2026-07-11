@@ -124,7 +124,7 @@ export default function Home() {
             </h2>
             
             <p style={{ fontSize: '1.05rem', maxWidth: '600px', margin: '0 auto' }}>
-              Crea tu cuenta de usuario de forma 100% gratuita y segura, y utiliza nuestro simulador de intercambio para adquirir tus primeros tokens de prueba de **<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} />MACHETE</span>**. Observa cómo se actualiza tu saldo instantáneamente en tu Panel de Control de manera segura.
+              Crea tu cuenta de usuario de forma 100% gratuita y segura, y utiliza nuestro simulador de intercambio para adquirir tus primeros tokens de prueba de **<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'middle', marginTop: '-0.1em' }}><Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>**. Observa cómo se actualiza tu saldo instantáneamente en tu Panel de Control de manera segura.
             </p>
           </div>
 
@@ -180,3 +180,4 @@ export default function Home() {
     </>
   );
 }
+

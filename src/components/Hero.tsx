@@ -65,7 +65,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
           </h1>
 
           <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-            Despeja tu camino financiero con <strong style={{ color: 'var(--color-gold)', display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'bottom' }}><Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1.1em', height: '1.1em' }} />MACHETE</strong>. 0% de impuestos, liquidez quemada y la fuerza del carpincho más afilado de la red <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>{blockchainNetwork}</span>.
+            Despeja tu camino financiero con <strong style={{ color: 'var(--color-gold)', display: 'inline-flex', alignItems: 'center', gap: '0.15em', verticalAlign: 'bottom' }}><Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1.1em', height: '1.1em' }} /> MacheteCoin</strong>. 0% de impuestos, liquidez quemada y la fuerza del carpincho más afilado de la red <span style={{ color: 'var(--color-gold)', fontWeight: 600 }}>{blockchainNetwork}</span>.
           </p>
 
           {/* Contract Address Panel */}
@@ -141,7 +141,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }} className="hero-buttons">
             <a href={raydiumUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: '1.05rem', padding: '1rem 2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                Comprar <Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1em', height: '1em' }} />MACHETE
+                Comprar <Image src="/logo-oficial.png" alt="$" width={20} height={20} style={{ width: '1em', height: '1em' }} /> MacheteCoin
               </div>
               <ExternalLink size={18} />
             </a>
@@ -244,3 +244,4 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
     </section>
   );
 }
+
