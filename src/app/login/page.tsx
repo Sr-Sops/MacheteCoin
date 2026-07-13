@@ -25,6 +25,7 @@ export default function Login() {
   const [show2FaScreen, setShow2FaScreen] = useState(false);
   const [twoFaCode, setTwoFaCode] = useState('');
   const [twoFaError, setTwoFaError] = useState('');
+  const [twoFaFactorId, setTwoFaFactorId] = useState('');
 
   // RECOVERY MODAL STATE
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
@@ -63,21 +64,18 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 1. Check if the user has 2FA enabled before completing login
-      const has2Fa = await MacheteService.checkUserTwoFaEnabled(loginInput);
-      
-      if (has2Fa && !show2FaScreen) {
-        // Stop flow and prompt for 2FA OTP
-        setShow2FaScreen(true);
-        setLoading(false);
-        return;
-      }
-
-      // 2. Perform native sign in
+      // Perform native sign in (MacheteService detects if AAL2 MFA is required)
       const res = await MacheteService.signIn(loginInput, password);
+      
       if (res.success) {
-        router.push('/dashboard');
-        router.refresh();
+        if ((res as any).requiresMFA) {
+          // Native Supabase MFA required
+          setTwoFaFactorId((res as any).factorId || '');
+          setShow2FaScreen(true);
+        } else {
+          router.push('/dashboard');
+          router.refresh();
+        }
       } else {
         setError(getErrorMessage((res as any).error) || 'Credenciales de inicio de sesión incorrectas.');
         setShow2FaScreen(false); // Reset to username/password screen if failed
@@ -91,17 +89,25 @@ export default function Login() {
   };
 
   // 2FA CODE CONFIRM
-  const handleConfirm2FaLogin = (e: React.FormEvent) => {
+  const handleConfirm2FaLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!twoFaCode || twoFaCode.length < 6) {
       setTwoFaError('El código OTP debe ser de 6 dígitos.');
       return;
     }
     setTwoFaError('');
+    setLoading(true);
     
-    // Simulate/Perform OTP verification
-    // Since mock or client handles session, we just call the normal signIn now
-    handleLoginSubmit(e);
+    // Verify native MFA Factor
+    const verifyRes = await MacheteService.challengeAndVerifyMFA(twoFaFactorId, twoFaCode);
+    setLoading(false);
+    
+    if (verifyRes.success) {
+      router.push('/dashboard');
+      router.refresh();
+    } else {
+      setTwoFaError(verifyRes.error || 'Código incorrecto o expirado.');
+    }
   };
 
   // RECOVERY SUBMISSION
@@ -238,6 +244,7 @@ export default function Login() {
               </label>
               <input 
                 type="text" 
+                inputMode="numeric"
                 id="2faCode"
                 maxLength={6}
                 required
@@ -248,13 +255,14 @@ export default function Login() {
                   background: 'rgba(0,0,0,0.4)',
                   border: '1px solid rgba(255, 199, 0, 0.3)',
                   borderRadius: '8px',
-                  padding: '0.75rem',
-                  color: 'var(--text-primary)',
-                  fontSize: '1.4rem',
+                  padding: '0.8rem',
+                  color: 'var(--color-gold)',
+                  fontSize: '1.5rem',
                   fontWeight: 'bold',
                   textAlign: 'center',
-                  letterSpacing: '0.2em',
+                  letterSpacing: '0.5em',
                   outline: 'none',
+                  width: '100%'
                 }}
               />
             </div>

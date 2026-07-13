@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MacheteService, Profile } from '@/lib/supabase';
-import { Shield, LayoutDashboard, LogOut, LogIn, Menu, X, ArrowRight } from 'lucide-react';
+import { Shield, LayoutDashboard, LogOut, LogIn, Menu, X, ArrowRight, LineChart } from 'lucide-react';
 import LanguageTranslator from './LanguageTranslator';
 
 interface HeaderProps {
@@ -12,9 +12,13 @@ interface HeaderProps {
   telegramUrl?: string;
   discordUrl?: string;
   instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  poocoinUrl?: string;
 }
 
-export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramUrl }: HeaderProps) {
+export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramUrl, facebookUrl, tiktokUrl, youtubeUrl, poocoinUrl }: HeaderProps) {
   const [user, setUser] = useState<Profile | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -111,6 +115,26 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
               </a>
             )}
+            {facebookUrl && (
+              <a href={facebookUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="social-hover">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+              </a>
+            )}
+            {tiktokUrl && (
+              <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="social-hover">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93v7.02c-.01 1.65-.56 3.29-1.57 4.56-1.14 1.43-2.83 2.31-4.66 2.48-1.89.17-3.83-.24-5.34-1.34-1.46-1.07-2.45-2.71-2.69-4.51-.25-1.81.16-3.69 1.15-5.21 1.05-1.6 2.75-2.63 4.63-2.82v4.11c-.4.04-.8.15-1.17.34-.69.35-1.23.95-1.45 1.69-.2.66-.14 1.4.15 2.01.27.56.76 1.01 1.34 1.18.66.19 1.39.11 1.99-.21.65-.35 1.11-.97 1.25-1.69.06-.32.09-.65.09-.98V.02z"/></svg>
+              </a>
+            )}
+            {youtubeUrl && (
+              <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="social-hover">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </a>
+            )}
+            {poocoinUrl && (
+              <a href={poocoinUrl} title="PooCoin" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', transition: 'color 0.2s' }} className="social-hover">
+                <LineChart size={20} />
+              </a>
+            )}
           </div>
 
           <LanguageTranslator />
@@ -133,42 +157,49 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
               </button>
             </div>
           ) : (
-            <Link href="/login" className="btn btn-gold" style={{ padding: '0.55rem 1.25rem', fontSize: '0.9rem', gap: '0.25rem' }}>
-              <LogIn size={15} />
-              Iniciar Sesión
-            </Link>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <Link href="/register" className="btn btn-glass" style={{ padding: '0.55rem 1rem', fontSize: '0.9rem', gap: '0.25rem' }}>
+                Registrarse
+              </Link>
+              <Link href="/login" className="btn btn-gold" style={{ padding: '0.55rem 1.25rem', fontSize: '0.9rem', gap: '0.25rem' }}>
+                <LogIn size={15} />
+                Iniciar Sesión
+              </Link>
+            </div>
           )}
         </div>
 
-        {/* Mobile Menu Icon */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ display: 'flex', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
-          className="md-none"
-        >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile Action Area */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} className="md-none">
+          <LanguageTranslator />
+          {/* Mobile Menu Icon */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ display: 'flex', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div style={{
-          position: 'fixed',
-          top: '60px',
+          position: 'absolute',
+          top: '100%',
           left: 0,
           width: '100%',
-          height: 'calc(100vh - 60px)',
           background: 'rgba(5, 10, 7, 0.98)',
           backdropFilter: 'blur(20px)',
           borderTop: '1px solid rgba(255, 199, 0, 0.1)',
-          padding: '2rem 1.5rem',
+          padding: '1.25rem 1.5rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem',
+          gap: '1.25rem',
           zIndex: 99,
         }}>
           {/* Mobile socials */}
-          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             {twitterUrl && (
               <a href={twitterUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
                 <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
@@ -189,10 +220,26 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
                 <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
               </a>
             )}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <LanguageTranslator />
+            {facebookUrl && (
+              <a href={facebookUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+              </a>
+            )}
+            {tiktokUrl && (
+              <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93v7.02c-.01 1.65-.56 3.29-1.57 4.56-1.14 1.43-2.83 2.31-4.66 2.48-1.89.17-3.83-.24-5.34-1.34-1.46-1.07-2.45-2.71-2.69-4.51-.25-1.81.16-3.69 1.15-5.21 1.05-1.6 2.75-2.63 4.63-2.82v4.11c-.4.04-.8.15-1.17.34-.69.35-1.23.95-1.45 1.69-.2.66-.14 1.4.15 2.01.27.56.76 1.01 1.34 1.18.66.19 1.39.11 1.99-.21.65-.35 1.11-.97 1.25-1.69.06-.32.09-.65.09-.98V.02z"/></svg>
+              </a>
+            )}
+            {youtubeUrl && (
+              <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </a>
+            )}
+            {poocoinUrl && (
+              <a href={poocoinUrl} title="PooCoin" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-gold)' }}>
+                <LineChart size={24} />
+              </a>
+            )}
           </div>
 
           {/* Mobile Auth Area */}
@@ -214,10 +261,15 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
               </button>
             </div>
           ) : (
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="btn btn-gold" style={{ marginTop: 'auto', gap: '0.5rem' }}>
-              <LogIn size={18} />
-              Iniciar Sesión
-            </Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: 'auto' }}>
+              <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="btn btn-glass" style={{ gap: '0.5rem' }}>
+                Registrarse
+              </Link>
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="btn btn-gold" style={{ gap: '0.5rem' }}>
+                <LogIn size={18} />
+                Iniciar Sesión
+              </Link>
+            </div>
           )}
         </div>
       )}

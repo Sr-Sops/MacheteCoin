@@ -275,7 +275,8 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
             (() => {
               const isPhoneVerified = !!user.phone_verified;
               const isWalletLinked = !!user.wallet_address;
-              const isCompliant = isPhoneVerified && isWalletLinked;
+              const is2FaEnabled = !!user.two_fa_enabled;
+              const isCompliant = isPhoneVerified && isWalletLinked && is2FaEnabled;
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
@@ -305,6 +306,10 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isPhoneVerified ? '#4ade80' : '#fbbf24' }}>
                           {isPhoneVerified ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                           <span>Teléfono móvil verificado ({isPhoneVerified ? 'Listo' : 'Pendiente en Mi Perfil'})</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: is2FaEnabled ? '#4ade80' : '#fbbf24' }}>
+                          {is2FaEnabled ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                          <span>Autenticación 2FA Activada ({is2FaEnabled ? 'Listo' : 'Pendiente en Mi Perfil'})</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isWalletLinked ? '#4ade80' : '#fbbf24' }}>
                           {isWalletLinked ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}

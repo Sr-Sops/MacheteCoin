@@ -191,13 +191,13 @@ export default function LanguageTranslator() {
 
       {isOpen && (
         <div style={{
-          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-          marginTop: '0.5rem', background: '#0a140f', border: '1px solid rgba(255,199,0,0.3)',
+          position: 'absolute', top: 'calc(100% + 0.5rem)', right: 0,
+          background: '#0a140f', border: '1px solid rgba(255,199,0,0.3)',
           borderRadius: '12px', padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem',
           boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 100, minWidth: '180px',
           maxHeight: '350px', overflowY: 'auto'
         }}
-        className="custom-scrollbar"
+        className="custom-scrollbar lang-dropdown-menu"
         >
           {LANGUAGES.map(lang => (
             <button

@@ -52,7 +52,7 @@ export default function AdminSetup() {
     setLoading(true);
 
     try {
-      // Direct registration as admin with approved KYC status
+      // Direct registration as admin
       const res = await MacheteService.signUp({
         email,
         username,
@@ -61,10 +61,7 @@ export default function AdminSetup() {
         lastName,
         phone,
         birthDate,
-        documentId: 'ADMIN-PASS',
         role: 'admin',
-        kycStatus: 'approved',
-        kycDocumentUrl: '/storage/kyc/admin-auto-approved.png',
       });
 
       console.log("Supabase URL client-side:", process.env.NEXT_PUBLIC_SUPABASE_URL);

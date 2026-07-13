@@ -41,23 +41,15 @@ export default function Dashboard() {
   const [profileMessage, setProfileMessage] = useState({ text: '', type: 'success' });
   const [profileLoading, setProfileLoading] = useState(false);
 
-  // KYC ACTION MODAL
-  const [showKycModal, setShowKycModal] = useState(false);
-  const [kycDocType, setKycDocType] = useState('DNI');
-  const [kycDocId, setKycDocId] = useState('');
-  const [kycFileFront, setKycFileFront] = useState('');
-  const [kycFileBack, setKycFileBack] = useState('');
-  const [kycScanning, setKycScanning] = useState(false);
-  const [kycScanProgress, setKycScanProgress] = useState(0);
-  const [kycSessionId, setKycSessionId] = useState('');
-  const [kycQrUrl, setKycQrUrl] = useState('');
-  const [kycCompleted, setKycCompleted] = useState(false);
+
 
   // 2FA GOOGLE AUTH MODAL
   const [showTwoFaModal, setShowTwoFaModal] = useState(false);
   const [twoFaSecret, setTwoFaSecret] = useState('');
   const [twoFaCodeInput, setTwoFaCodeInput] = useState('');
   const [twoFaError, setTwoFaError] = useState('');
+  const [twoFaFactorId, setTwoFaFactorId] = useState('');
+  const [twoFaQrCodeSvg, setTwoFaQrCodeSvg] = useState('');
 
   // DELETE ACCOUNT CONFIRM MODAL
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -233,91 +225,30 @@ export default function Dashboard() {
     reader.readAsDataURL(file);
   };
 
-  // KYC BIOMETRIC SCAN ACTION
-  const handleKycSubmit = async () => {
-    if (!kycDocId) {
-      alert('Por favor, introduce el número del documento.');
-      return;
-    }
 
-    // If not yet completed, check the kyc_sessions table
-    if (!kycCompleted && kycSessionId) {
-      setKycScanning(true);
-      setKycScanProgress(15);
 
-      const interval = setInterval(() => {
-        setKycScanProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 20;
-        });
-      }, 250);
-
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setKycScanning(false);
-
-      // Check session in DB
-      const supabase = (await import('@/lib/supabase')).supabaseClient;
-      if (supabase) {
-        const { data: session } = await supabase
-          .from('kyc_sessions')
-          .select('status')
-          .eq('id', kycSessionId)
-          .single();
-
-        if (!session || session.status !== 'completed') {
-          alert('Aún no has completado las fotos en tu móvil. Completa el proceso y vuelve a intentarlo.');
-          return;
-        }
-        setKycCompleted(true);
-      }
-      return; // Let user click again to submit
-    }
-
-    if (!kycCompleted) {
-      alert('Primero genera el QR y completa la verificación desde tu móvil.');
-      return;
-    }
-
-    // Call service update for KYC status
-    if (user) {
-      const result = await MacheteService.updateProfile(user.id, {
-        kyc_status: 'approved', // Auto-approve instantly to simulate fast verification
-        kyc_document_type: kycDocType,
-        kyc_document_url: `/kyc-session/${kycSessionId}`,
-        document_id: kycDocId
-      });
-
-      if (result.success) {
-        setShowKycModal(false);
-        setKycDocId('');
-        setKycSessionId('');
-        setKycCompleted(false);
-        loadSession();
-        alert('KYC Enviado correctamente. El equipo lo verificará de inmediato.');
-      } else {
-        alert('Error al guardar datos de verificación.');
-      }
-    }
-  };
-
-  // 2FA MOCK INITIATION
-  const handleToggleTwoFa = () => {
+  // 2FA MOCK / REAL INITIATION
+  const handleToggleTwoFa = async () => {
     if (user?.two_fa_enabled) {
-      // Deactivate immediately
       if (confirm('¿Estás seguro de desactivar la autenticación en dos pasos? Tu cuenta será menos segura.')) {
         MacheteService.updateProfile(user.id, { two_fa_enabled: false, two_fa_secret: null }).then(() => {
           loadSession();
         });
       }
     } else {
-      // Generate standard mock secret
-      const randomSecret = 'MA2F' + Math.random().toString(36).substr(2, 10).toUpperCase();
-      setTwoFaSecret(randomSecret);
-      setTwoFaError('');
-      setShowTwoFaModal(true);
+      setLoading(true);
+      const res = await MacheteService.enrollMFA();
+      setLoading(false);
+      
+      if (res.success && res.factorId) {
+        setTwoFaFactorId(res.factorId);
+        setTwoFaSecret(res.secret || '');
+        setTwoFaQrCodeSvg(res.qrCode || '');
+        setTwoFaError('');
+        setShowTwoFaModal(true);
+      } else {
+        setProfileMessage({ text: res.error || 'Error al iniciar 2FA', type: 'error' });
+      }
     }
   };
 
@@ -326,8 +257,19 @@ export default function Dashboard() {
       setTwoFaError('El código OTP debe ser de 6 dígitos.');
       return;
     }
+    
+    setLoading(true);
+    // Verify MFA Factor
+    const verifyRes = await MacheteService.challengeAndVerifyMFA(twoFaFactorId, twoFaCodeInput);
+    
+    if (!verifyRes.success) {
+      setLoading(false);
+      setTwoFaError(verifyRes.error || 'Código incorrecto o expirado.');
+      return;
+    }
+
+    // If verification succeeded, mark profile as enabled
     if (user) {
-      setLoading(true);
       const res = await MacheteService.updateProfile(user.id, {
         two_fa_enabled: true,
         two_fa_secret: twoFaSecret
@@ -338,7 +280,7 @@ export default function Dashboard() {
         setTwoFaCodeInput('');
         loadSession();
       } else {
-        setTwoFaError('Código de validación incorrecto.');
+        setTwoFaError('Error al guardar 2FA en el perfil');
       }
     }
   };
@@ -478,38 +420,7 @@ export default function Dashboard() {
               {activeUser.role === 'admin' ? 'Administrador' : 'Inversor'}
             </div>
 
-            {/* Clickable KYC verification status badge */}
-            <button 
-              onClick={() => {
-                setKycSessionId('');
-                setKycCompleted(false);
-                setShowKycModal(true);
-              }}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                background: activeUser.kyc_status === 'approved' 
-                  ? 'rgba(34, 197, 94, 0.08)' 
-                  : activeUser.kyc_status === 'rejected' 
-                    ? 'rgba(239, 68, 68, 0.08)' 
-                    : activeUser.kyc_status === 'pending'
-                      ? 'rgba(56, 189, 248, 0.08)'
-                      : 'rgba(245, 158, 11, 0.08)',
-                border: `1px solid ${activeUser.kyc_status === 'approved' 
-                  ? 'rgba(34, 197, 94, 0.25)' 
-                  : activeUser.kyc_status === 'rejected' 
-                    ? 'rgba(239, 68, 68, 0.25)' 
-                    : activeUser.kyc_status === 'pending'
-                      ? 'rgba(56, 189, 248, 0.25)'
-                      : 'rgba(245, 158, 11, 0.25)'}`,
-                padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
-                color: activeUser.kyc_status === 'approved' ? '#4ade80' : activeUser.kyc_status === 'rejected' ? '#f87171' : activeUser.kyc_status === 'pending' ? '#38bdf8' : '#fbbf24',
-                cursor: activeUser.kyc_status === 'approved' || activeUser.kyc_status === 'pending' ? 'default' : 'pointer'
-              }}
-              title={activeUser.kyc_status !== 'approved' && activeUser.kyc_status !== 'pending' ? 'Pulsa para completar verificación de identidad' : ''}
-            >
-              {activeUser.kyc_status === 'approved' ? <Check size={13} /> : activeUser.kyc_status === 'rejected' ? <AlertCircle size={13} /> : <Clock size={13} />}
-              KYC {activeUser.kyc_status === 'approved' ? 'Verificado' : activeUser.kyc_status === 'rejected' ? 'Rechazado (Reintentar)' : activeUser.kyc_status === 'pending' ? 'En Revisión' : 'Por Verificar'}
-            </button>
+
           </div>
         </div>
 
@@ -638,33 +549,70 @@ export default function Dashboard() {
                 </div>
               ) : (
                 /* Unlinked state */
-                <form onSubmit={handleLinkWallet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    Vincula tu clave pública de Polygon o Ethereum (ej. MetaMask, Trust Wallet) para asociar el saldo acumulado en compras de MacheteCoins.
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="Pega tu clave pública (ej. 0x1234...)"
-                      value={walletInput}
-                      onChange={(e) => setWalletInput(e.target.value)}
-                      style={{
-                        background: 'rgba(0,0,0,0.2)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        borderRadius: '10px',
-                        padding: '0.75rem 1rem',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.9rem',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-                  <button type="submit" disabled={walletLoading || !walletInput} className="btn btn-gold" style={{ width: '100%', gap: '0.25rem' }}>
-                    {walletLoading ? <Loader2 size={16} className="spin-logo" /> : null}
-                    Vincular Billetera
-                  </button>
-                </form>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {(!activeUser.phone_verified || !activeUser.two_fa_enabled) ? (
+                    <div style={{
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      textAlign: 'left'
+                    }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', color: '#fbbf24', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                        <AlertCircle size={16} />
+                        <span>Acción Bloqueada por Seguridad</span>
+                      </div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                        Para vincular una billetera externa y operar con MacheteCoin, es obligatorio cumplir los siguientes requisitos de seguridad básicos:
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#4ade80' }}>
+                          <CheckCircle2 size={14} />
+                          <span>E-mail verificado correctamente</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: activeUser.phone_verified ? '#4ade80' : '#fbbf24' }}>
+                          {activeUser.phone_verified ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                          <span>Teléfono móvil verificado {activeUser.phone_verified ? '' : '(Pendiente en Mi Perfil)'}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: activeUser.two_fa_enabled ? '#4ade80' : '#fbbf24' }}>
+                          {activeUser.two_fa_enabled ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                          <span>Autenticación 2FA Activada {activeUser.two_fa_enabled ? '' : '(Pendiente de configurar)'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleLinkWallet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                        Vincula tu clave pública de Polygon o Ethereum (ej. MetaMask, Trust Wallet) para asociar el saldo acumulado en compras de MacheteCoins.
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Pega tu clave pública (ej. 0x1234...)"
+                          value={walletInput}
+                          onChange={(e) => setWalletInput(e.target.value)}
+                          style={{
+                            background: 'rgba(0,0,0,0.2)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '10px',
+                            padding: '0.75rem 1rem',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                      <button type="submit" disabled={walletLoading || !walletInput} className="btn btn-gold" style={{ width: '100%', gap: '0.25rem' }}>
+                        {walletLoading ? <Loader2 size={16} className="spin-logo" /> : null}
+                        Vincular Billetera
+                      </button>
+                    </form>
+                  )}
+                </div>
               )}
             </div>
 
@@ -900,7 +848,7 @@ export default function Dashboard() {
                   <span>Contraseña Actual de Autorización</span>
                 </div>
                 <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
-                  Por motivos de seguridad y KYC, debes introducir tu **contraseña actual** para poder guardar cualquier cambio en tu perfil de usuario.
+                  Por motivos de seguridad, debes introducir tu **contraseña actual** para poder guardar cualquier cambio en tu perfil de usuario.
                 </p>
                 <input 
                   type="password" 
@@ -985,7 +933,7 @@ export default function Dashboard() {
                 <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Zona de Peligro</h3>
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                La eliminación de la cuenta es un proceso **totalmente irreversible**. Perderás permanentemente tu nombre de usuario, el saldo acumulado en MacheteCoins y toda tu información personal de verificación.
+                La eliminación de la cuenta es un proceso **totalmente irreversible**. Perderás permanentemente tu nombre de usuario, el saldo acumulado en MacheteCoins y cualquier vinculación de billetera.
               </p>
               
               <button 
@@ -1006,148 +954,7 @@ export default function Dashboard() {
 
       </main>
 
-      {/* KYC VERIFICATION ACTION MODAL */}
-      {showKycModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
-        }}>
-          <div className="glass-panel" style={{
-            maxWidth: '480px', width: '100%', padding: '2rem',
-            border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-gold)' }} className="gold-text-gradient">
-              Verificación de Identidad KYC
-            </h3>
 
-            {kycScanning ? (
-              /* Biometric KYC Scanning animation */
-              <div style={{
-                background: 'rgba(8, 15, 12, 0.95)', border: '1px solid var(--color-green-neon)',
-                borderRadius: '8px', padding: '1.5rem', textAlign: 'center',
-                display: 'flex', flexDirection: 'column', gap: '0.75rem',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <RefreshCw className="spin-logo" style={{ color: 'var(--color-green-neon)' }} size={24} />
-                </div>
-                <h4 style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Escaneo Biométrico KYC en Curso...
-                </h4>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${kycScanProgress}%`, height: '100%', background: 'var(--color-green-neon)', transition: 'width 0.2s ease' }} />
-                </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                  Analizando originalidad de documentos y firmas biométricas oficiales... {kycScanProgress}%
-                </p>
-              </div>
-            ) : (
-              /* Kyc Upload Fields */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Sube una foto de tu documento oficial de identificación para que nuestro equipo pueda verificar tu cuenta y activar tus operaciones.
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label htmlFor="kycDocType" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tipo de Documento</label>
-                  <select 
-                    id="kycDocType"
-                    value={kycDocType}
-                    onChange={(e) => setKycDocType(e.target.value)}
-                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.5rem', color: 'var(--text-primary)', cursor: 'pointer' }}
-                  >
-                    <option value="DNI" style={{ background: '#080F0C' }}>DNI</option>
-                    <option value="NIE" style={{ background: '#080F0C' }}>NIE</option>
-                    <option value="Pasaporte" style={{ background: '#080F0C' }}>Pasaporte</option>
-                    <option value="Licencia de Conducir" style={{ background: '#080F0C' }}>Permiso / Licencia de Conducir</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label htmlFor="kycDocId" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Número del Documento</label>
-                  <input 
-                    type="text" 
-                    id="kycDocId"
-                    placeholder="ej. 12345678X"
-                    value={kycDocId}
-                    onChange={(e) => setKycDocId(e.target.value.toUpperCase())}
-                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.5rem', color: 'var(--text-primary)', outline: 'none' }}
-                  />
-                </div>
-
-                {/* QR/Mobile KYC capture */}
-                {!kycSessionId && !kycCompleted && (
-                  <div style={{ textAlign: 'center', padding: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: '8px' }}>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
-                      Por motivos de seguridad, la captura de documentos debe realizarse desde un teléfono móvil.
-                    </p>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const id = crypto.randomUUID();
-                        setKycSessionId(id);
-                        setKycQrUrl(`${window.location.origin}/kyc/mobile?session=${id}`);
-                      }}
-                      className="btn btn-gold"
-                      style={{ width: '100%' }}
-                    >
-                      Generar QR de Verificación
-                    </button>
-                  </div>
-                )}
-
-                {kycSessionId && !kycCompleted && (
-                  <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
-                      Escanea este QR con tu móvil:
-                    </p>
-                    <div style={{ padding: '0.75rem', background: 'white', borderRadius: '10px' }}>
-                      <QRCodeSVG value={kycQrUrl} size={150} />
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.75rem' }}>
-                      O abre directamente en tu móvil:
-                    </p>
-                    <button 
-                      type="button"
-                      onClick={() => window.open(kycQrUrl, '_blank')}
-                      className="btn"
-                      style={{ marginTop: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', fontSize: '0.8rem' }}
-                    >
-                      <Smartphone size={16} /> Abrir Cámara
-                    </button>
-                  </div>
-                )}
-
-                {kycCompleted && (
-                  <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--color-green-neon)' }}>
-                    <CheckCircle2 color="var(--color-green-neon)" size={28} style={{ margin: '0 auto 0.5rem' }} />
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Fotos capturadas con éxito</p>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setShowKycModal(false); setKycSessionId(''); setKycCompleted(false); }}
-                    className="btn"
-                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleKycSubmit}
-                    className="btn btn-gold"
-                    style={{ flex: 1 }}
-                  >
-                    {kycCompleted ? 'Enviar KYC' : 'Verificar Estado'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* 2FA SETUP MODAL */}
       {showTwoFaModal && (
@@ -1173,10 +980,14 @@ export default function Dashboard() {
             </div>
 
             <div style={{ background: '#fff', padding: '0.75rem', borderRadius: '8px', display: 'inline-block', margin: '0 auto' }}>
-              <QRCodeSVG 
-                value={`otpauth://totp/MacheteCoin:${editEmail}?secret=${twoFaSecret}&issuer=MacheteCoin`}
-                size={130}
-              />
+              {twoFaQrCodeSvg ? (
+                <div dangerouslySetInnerHTML={{ __html: twoFaQrCodeSvg }} style={{ width: 130, height: 130 }} />
+              ) : (
+                <QRCodeSVG 
+                  value={`otpauth://totp/MacheteCoin:${editEmail}?secret=${twoFaSecret}&issuer=MacheteCoin`}
+                  size={130}
+                />
+              )}
             </div>
 
             <div style={{
@@ -1192,14 +1003,15 @@ export default function Dashboard() {
 
             <input 
               type="text" 
+              inputMode="numeric"
               maxLength={6}
-              placeholder="Introduce el código de 6 dígitos"
+              placeholder="000000"
               value={twoFaCodeInput}
               onChange={(e) => setTwoFaCodeInput(e.target.value.replace(/[^0-9]/g, ''))}
               style={{
-                background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px',
-                padding: '0.6rem', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 'bold',
-                textAlign: 'center', letterSpacing: '0.15em', outline: 'none'
+                background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255, 199, 0, 0.3)', borderRadius: '8px',
+                padding: '0.8rem', color: 'var(--color-gold)', fontSize: '1.5rem', fontWeight: 'bold',
+                textAlign: 'center', letterSpacing: '0.5em', outline: 'none', width: '100%'
               }}
             />
 
@@ -1242,8 +1054,8 @@ export default function Dashboard() {
               <h3 style={{ fontSize: '1.15rem', fontWeight: 'bold' }}>¿Confirmas la eliminación permanente?</h3>
             </div>
             
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-              Para confirmar que deseas borrar tu cuenta por completo (incluyendo tu saldo de MacheteCoins y toda tu identidad verificada), introduce tu **contraseña de inicio de sesión**.
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Para confirmar que deseas borrar tu cuenta por completo (incluyendo tu saldo de MacheteCoins y toda tu información de seguridad), introduce tu **contraseña de inicio de sesión**.
             </p>
 
             {deleteError && (

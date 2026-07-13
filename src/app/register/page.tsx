@@ -28,7 +28,7 @@ export default function Register() {
   const [isAdminSetup, setIsAdminSetup] = useState(false);
   const [isMock, setIsMock] = useState(false);
   
-  // Active Step (1: Credentials & Avatar, 2: Personal Details & Phone SMS, 3: KYC Documents, 4: Recovery Words)
+  // Active Step (1: Credentials & Avatar, 2: Personal Details & Phone SMS, 3: Recovery Words)
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,21 +65,10 @@ export default function Register() {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [verifyingPhone, setVerifyingPhone] = useState(false);
 
-  // STEP 3 FIELDS (KYC)
-  const [documentType, setDocumentType] = useState('DNI');
-  const [documentId, setDocumentId] = useState('');
-  const [fileNameFront, setFileNameFront] = useState('');
-  const [fileNameBack, setFileNameBack] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
-  const [kycSessionId, setKycSessionId] = useState('');
-  const [kycMethod, setKycMethod] = useState<'camera'|'qr'|null>(null);
-  const [kycCompleted, setKycCompleted] = useState(false);
-  const [kycQrUrl, setKycQrUrl] = useState('');
-
-  // STEP 4 FIELDS (RECOVERY)
+  // STEP 3 FIELDS (RECOVERY)
   const [recoveryWords, setRecoveryWords] = useState('');
   const [copiedWords, setCopiedWords] = useState(false);
+  const [savedWords, setSavedWords] = useState(false);
 
   useEffect(() => {
     MacheteService.init();
@@ -273,8 +262,8 @@ export default function Register() {
 
       setStep(2);
     } else if (step === 2) {
-      if (!username || !firstName || !lastName || !phoneNum || !birthDate) {
-        setError('Por favor, rellena todos los datos personales.');
+      if (!firstName || !lastName || !phoneNum || !birthDate) {
+        setError('Por favor, rellena todos los datos de contacto.');
         return;
       }
 
@@ -298,73 +287,19 @@ export default function Register() {
         return;
       }
 
-      // Phone verification requirement removed
       const age = calculateAge(birthDate);
       if (age < 18) {
         setError('Debes ser mayor de 18 años para abrir una cuenta oficial.');
         return;
       }
       
-      // If it is admin setup, skip KYC step and go directly to Recovery Words or submit
-      if (isAdminSetup) {
-        generateRecoveryWordsStep();
-      } else {
-        setStep(3);
-      }
-    } else if (step === 3) {
-      if (!documentId) {
-        setError('Por favor, introduce el número de identificación oficial.');
+      if (!phoneVerified && !isAdminSetup) {
+        handleSendOtp();
         return;
       }
       
-      // Check KYC Session status
-      if (kycSessionId) {
-        setLoading(true);
-        let session: any = null;
-        if (supabaseClient) {
-          const { data } = await supabaseClient
-            .from('kyc_sessions')
-            .select('status')
-            .eq('id', kycSessionId)
-            .single();
-          session = data;
-        }
-        setLoading(false);
-
-        if (!session || session.status !== 'completed') {
-          setError('Aún no has completado las fotos en tu móvil o cámara. Por favor, termina el proceso antes de continuar.');
-          return;
-        } else {
-          setKycCompleted(true);
-        }
-      } else {
-        setError('Por favor, selecciona un método de captura biométrica e inicia el proceso.');
-        return;
-      }
-      
-      // Bio scanning animation
-      triggerScanningAnimation();
+      generateRecoveryWordsStep();
     }
-  };
-
-  const triggerScanningAnimation = async () => {
-    setScanning(true);
-    setScanProgress(10);
-    
-    const interval = setInterval(() => {
-      setScanProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 15;
-      });
-    }, 300);
-
-    await new Promise((resolve) => setTimeout(resolve, 2200));
-    setScanning(false);
-    
-    generateRecoveryWordsStep();
   };
 
   const generateRecoveryWordsStep = () => {
@@ -375,7 +310,7 @@ export default function Register() {
       words.push(BIP39_WORDS[idx]);
     }
     setRecoveryWords(words.join(' '));
-    setStep(4);
+    setStep(3);
   };
 
   const handlePrevStep = () => {
@@ -383,16 +318,7 @@ export default function Register() {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, side: 'front' | 'back') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (side === 'front') {
-        setFileNameFront(file.name);
-      } else {
-        setFileNameBack(file.name);
-      }
-    }
-  };
+
 
   const handleFinalSubmit = async () => {
     setError('');
@@ -408,11 +334,7 @@ export default function Register() {
         phone: `${phoneCode} ${phoneNum}`,
         phoneVerified: phoneVerified || isAdminSetup,
         birthDate,
-        documentId,
         role: isAdminSetup ? 'admin' : 'user',
-        kycStatus: isAdminSetup || kycCompleted ? 'approved' : 'pending',
-        kycDocumentType: documentType,
-        kycDocumentUrl: kycSessionId ? `/kyc-session/${kycSessionId}` : undefined,
         avatarUrl: avatarBase64 || undefined,
         recoveryWords: recoveryWords || undefined,
       });
@@ -491,9 +413,9 @@ export default function Register() {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }} className="gold-text-gradient">
               {isAdminSetup ? 'Setup Administrador' : 'Crear Cuenta Machete'}
             </h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-              Paso {step} de 4 — {step === 1 ? 'Identidad Digital' : step === 2 ? 'Perfil Personal' : step === 3 ? 'Verificación KYC' : 'Llaves de Seguridad'}
-            </p>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-gold)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+              Paso {step} de 3 — {step === 1 ? 'Cuenta Principal' : step === 2 ? 'Datos de Contacto' : 'Llaves de Seguridad'}
+            </div>
           </div>
         </div>
 
@@ -507,7 +429,7 @@ export default function Register() {
           display: 'flex',
         }}>
           <div style={{
-            width: `${(step / 4) * 100}%`,
+            width: `${(step / 3) * 100}%`,
             height: '100%',
             background: 'var(--color-gold)',
             transition: 'width 0.4s ease',
@@ -929,301 +851,83 @@ export default function Register() {
           </div>
         )}
 
-        {/* STEP 3: KYC IDENTITY VERIFICATION */}
+        {/* STEP 3: RECOVERY WORDS */}
         {step === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            
-            {/* Document Type Dropdown */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label htmlFor="docType" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                Tipo de Documento Oficial
-              </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'rgba(0,0,0,0.25)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '8px',
-                padding: '0.7rem 1rem',
-                gap: '0.75rem',
-              }}>
-                <FileText size={16} style={{ color: 'var(--text-secondary)' }} />
-                <select 
-                  id="docType"
-                  value={documentType}
-                  onChange={(e) => setDocumentType(e.target.value)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <option value="DNI" style={{ background: '#080F0C' }}>Documento Nacional de Identidad (DNI)</option>
-                  <option value="NIE" style={{ background: '#080F0C' }}>Número de Identidad de Extranjero (NIE)</option>
-                  <option value="Pasaporte" style={{ background: '#080F0C' }}>Pasaporte Oficial</option>
-                  <option value="Licencia de Conducir" style={{ background: '#080F0C' }}>Permiso / Licencia de Conducir</option>
-                </select>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ textAlign: 'center' }}>
+              <ShieldCheck size={48} style={{ color: 'var(--color-gold)', margin: '0 auto 1rem' }} />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Frase Semilla</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.5rem', lineHeight: 1.4 }}>
+                Guarda estas 12 palabras en un lugar seguro. Son la única forma de recuperar tu cuenta si pierdes el acceso.
+              </p>
             </div>
 
-            {/* Document Number Input */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label htmlFor="docId" style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                Número de Documento
-              </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'rgba(0,0,0,0.25)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '8px',
-                padding: '0.7rem 1rem',
-                gap: '0.75rem',
-              }}>
-                <ShieldCheck size={16} style={{ color: 'var(--text-secondary)' }} />
-                <input 
-                  type="text" 
-                  id="docId"
-                  required
-                  placeholder="ej. 12345678Z"
-                  value={documentId}
-                  onChange={(e) => setDocumentId(e.target.value.toUpperCase())}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Document Image Uploaders - Replaced with Camera & QR options */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                Método de Captura Biométrica
-              </label>
-
-              {!kycSessionId && (
-                <div style={{ textAlign: 'center', padding: '1.5rem', background: 'rgba(0,0,0,0.15)', borderRadius: '8px' }}>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                    Por motivos de seguridad, la captura de documentos y el selfie de identidad debe realizarse desde un teléfono móvil.
-                  </p>
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      const id = crypto.randomUUID();
-                      setKycSessionId(id);
-                      setKycQrUrl(`${window.location.origin}/kyc/mobile?session=${id}`);
-                    }}
-                    className="btn btn-gold"
-                  >
-                    Iniciar Verificación en Móvil
-                  </button>
-                </div>
-              )}
-
-              {kycSessionId && !kycCompleted && (
-                <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>
-                    Escanea este QR con la cámara de tu móvil:
-                  </p>
-                  <div style={{ padding: '1rem', background: 'white', borderRadius: '12px' }}>
-                    <QRCodeSVG value={kycQrUrl} size={180} />
-                  </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '1rem' }}>
-                    O si ya estás en tu móvil, pulsa este botón:
-                  </p>
-                  <button 
-                    type="button"
-                    onClick={() => window.open(kycQrUrl, '_blank')}
-                    className="btn"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%' }}
-                  >
-                    <Smartphone size={20} /> Abrir Cámara
-                  </button>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1.5rem' }}>
-                    No cierres esta pestaña. Cuando termines en el móvil, pulsa "Verificar y Continuar" abajo.
-                  </p>
-                </div>
-              )}
-              
-              {kycCompleted && (
-                <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--color-green-neon)' }}>
-                  <CheckCircle2 color="var(--color-green-neon)" size={32} style={{ margin: '0 auto 0.5rem' }} />
-                  <h4 style={{ color: 'var(--text-primary)' }}>Captura Biométrica Finalizada</h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Tus fotos se han capturado con éxito.</p>
-                </div>
-              )}
-            </div>
-
-            {/* SCANNING PROGRESS OVERLAY */}
-            {scanning && (
-              <div style={{
-                background: 'rgba(8, 15, 12, 0.95)',
-                border: '1px solid var(--color-green-neon)',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <RefreshCw className="spin-logo" style={{ color: 'var(--color-green-neon)' }} size={24} />
-                </div>
-                <h4 style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Escaneo Biométrico KYC en Curso...
-                </h4>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${scanProgress}%`, height: '100%', background: 'var(--color-green-neon)', transition: 'width 0.2s ease' }} />
-                </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                  Analizando originalidad de documentos y firmas biométricas oficiales... {scanProgress}%
-                </p>
-              </div>
-            )}
-
-            {!scanning && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button 
-                    type="button" 
-                    onClick={handlePrevStep}
-                    className="btn" 
-                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  >
-                    Volver
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handleNextStep}
-                    className="btn btn-gold" 
-                    style={{ flex: 2 }}
-                    disabled={!documentId}
-                  >
-                    Verificar y Continuar
-                  </button>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={handleNextStep}
-                  className="btn" 
-                  style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(255,255,255,0.2)', color: 'var(--text-secondary)' }}
-                >
-                  Verificar más tarde (Completar Registro)
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* STEP 4: RECOVERY SEED WORDS */}
-        {step === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{
-              background: 'rgba(255, 199, 0, 0.03)',
-              border: '1px solid rgba(255, 199, 0, 0.15)',
-              borderRadius: '12px',
+            <div style={{ 
+              background: 'rgba(0,0,0,0.4)', 
+              border: '1px dashed rgba(255,199,0,0.3)', 
+              borderRadius: '8px', 
               padding: '1.25rem',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem'
+              flexWrap: 'wrap',
+              gap: '0.6rem',
+              justifyContent: 'center',
+              userSelect: 'all'
             }}>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: 'var(--color-gold)' }}>
-                <Key size={18} />
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Frase Semilla de Seguridad</h4>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                Guarda estas **12 palabras en un lugar extremadamente seguro**. Esta frase te permitirá recuperar el acceso a tu saldo de MacheteCoins y restablecer tu contraseña en caso de olvido.
-              </p>
-
-              {/* Words Grid Layout */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '0.5rem',
-                background: 'rgba(0,0,0,0.4)',
-                border: '1px solid rgba(255,255,255,0.04)',
-                borderRadius: '8px',
-                padding: '0.75rem',
-              }}>
-                {recoveryWords.split(' ').map((word, index) => (
-                  <div key={index} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    fontSize: '0.75rem',
-                    color: 'var(--text-primary)',
-                    padding: '0.25rem 0.4rem',
-                  }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', width: '16px' }}>{index + 1}.</span>
-                    <span style={{ fontWeight: 'bold' }}>{word}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Copy Button */}
-              <button
-                type="button"
-                onClick={handleCopyWords}
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '6px',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.75rem',
-                  padding: '0.5rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  fontWeight: 600
-                }}
-              >
-                {copiedWords ? (
-                  <>
-                    <Check size={14} style={{ color: 'var(--color-green-neon)' }} />
-                    Copiado al portapapeles
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} />
-                    Copiar las 12 palabras
-                  </>
-                )}
-              </button>
+              {recoveryWords.split(' ').map((word, idx) => (
+                <span key={idx} style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '0.3rem 0.6rem', 
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  fontFamily: 'monospace',
+                  color: 'var(--color-gold)'
+                }}>
+                  <span style={{ opacity: 0.5, marginRight: '0.3rem', fontSize: '0.7rem' }}>{idx + 1}</span>
+                  {word}
+                </span>
+              ))}
             </div>
 
-            <button 
-              type="button" 
-              disabled={loading}
-              onClick={handleFinalSubmit}
-              className="btn btn-gold" 
-              style={{ width: '100%', gap: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            <button
+              type="button"
+              onClick={handleCopyWords}
+              className="btn"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
             >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="spin-logo" />
-                  Creando Cuenta...
-                </>
-              ) : (
-                <>
-                  <UserPlus size={16} />
-                  He guardado mi frase, crear cuenta
-                </>
-              )}
+              <Copy size={16} style={{ marginRight: '0.5rem' }} />
+              Copiar Frase al Portapapeles
             </button>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', padding: '1rem', borderRadius: '8px' }}>
+              <input type="checkbox" id="savedWords" checked={savedWords} onChange={(e) => setSavedWords(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#f87171', marginTop: '0.1rem' }} />
+              <label htmlFor="savedWords" style={{ fontSize: '0.8rem', color: '#f87171', lineHeight: 1.4, cursor: 'pointer' }}>
+                He guardado estas palabras y entiendo que MacheteCoin no puede recuperarlas por mí.
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+              <button 
+                type="button" 
+                onClick={() => setStep(2)}
+                className="btn" 
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                Volver
+              </button>
+              <button 
+                type="button" 
+                onClick={handleFinalSubmit}
+                disabled={!savedWords || loading}
+                className="btn btn-gold" 
+                style={{ flex: 1 }}
+              >
+                {loading ? <Loader2 className="spin-logo" /> : 'Finalizar Registro'}
+              </button>
+            </div>
           </div>
         )}
-      </div>
+
+      </div> {/* End of main glass-panel */}
 
       {/* POPUP MODAL: TERMS AND CONDITIONS */}
       {showTermsModal && (
@@ -1267,16 +971,14 @@ export default function Register() {
               gap: '1rem'
             }} className="scrollable-content">
               <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>1. Aceptación del Contrato</h4>
-              <p>Al registrarte en MacheteCoin, declaras que tienes al menos 18 años, que los documentos oficiales cargados (DNI/NIE/Pasaporte/Licencia de Conducir) son originales de tu país de origen, y que aceptas la vinculación de tu billetera cripto para transferencias directas.</p>
+              <p>Al registrarte en MacheteCoin, declaras que tienes al menos 18 años y que aceptas la vinculación de tu billetera cripto para transferencias directas, asegurando la veracidad de tu correo y teléfono.</p>
               
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>2. Verificación de Identidad (KYC)</h4>
-              <p>Para cumplir con las regulaciones internacionales anti-lavado de dinero (AML), MacheteCoin requiere la verificación de identidad biométrica mediante algoritmos automáticos. Nos reservamos el derecho de aprobar, rechazar o suspender cualquier cuenta si se detecta falsificación de documentos o datos inexactos.</p>
-              
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>3. Seguridad y Recuperación de Fondos</h4>
-              <p>Cada usuario es responsable único del resguardo de su frase semilla de 12 palabras. MacheteCoin es un entorno sin custodia secundaria para la recuperación directa de claves; si pierdes tus 12 palabras de recuperación, no habrá forma de restablecer el saldo de tu cuenta.</p>
-              
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>4. Políticas de Datos Personales</h4>
-              <p>Cumplimos estrictamente con la Ley de Protección de Datos (GDPR). Tus datos de verificación KYC y número de teléfono móvil están fuertemente encriptados en reposo y nunca serán vendidos ni transferidos a terceros comerciales.</p>
+              <p>Protege la privacidad de todos los usuarios mediante protocolos criptográficos avanzados.</p>
+            </div>
+            
+            <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>3. Custodia Segura de Activos</h4>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Tu número de teléfono móvil está fuertemente encriptado en reposo y nunca será vendido ni transferido a terceros comerciales.</p>
             </div>
 
             <button

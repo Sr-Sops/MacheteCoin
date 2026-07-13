@@ -69,9 +69,13 @@ export default function Home() {
     telegram_url: 'https://t.me/MacheteCoin',
     discord_url: 'https://discord.gg/MacheteCoin',
     instagram_url: 'https://instagram.com/MacheteCoin',
+    facebook_url: 'https://facebook.com/MacheteCoin',
+    tiktok_url: 'https://tiktok.com/@MacheteCoin',
+    youtube_url: 'https://youtube.com/@MacheteCoin',
+    poocoin_url: 'https://poocoin.app/',
     dexscreener_url: 'https://dexscreener.com/',
-    raydium_url: 'https://quickswap.exchange/',
-    swap_rate: 1000000.0,
+    raydium_url: 'https://raydium.io/',
+    swap_rate: 2500000.0,
     swap_rate_usdt: 2500000.0,
     updated_at: new Date().toISOString(),
   };
@@ -84,6 +88,10 @@ export default function Home() {
         telegramUrl={activeSettings.telegram_url} 
         discordUrl={activeSettings.discord_url} 
         instagramUrl={activeSettings.instagram_url}
+        facebookUrl={activeSettings.facebook_url}
+        tiktokUrl={activeSettings.tiktok_url}
+        youtubeUrl={activeSettings.youtube_url}
+        poocoinUrl={activeSettings.poocoin_url}
       />
 
       {/* Hero Section */}
@@ -158,6 +166,10 @@ export default function Home() {
         telegramUrl={activeSettings.telegram_url} 
         discordUrl={activeSettings.discord_url} 
         instagramUrl={activeSettings.instagram_url}
+        facebookUrl={activeSettings.facebook_url}
+        tiktokUrl={activeSettings.tiktok_url}
+        youtubeUrl={activeSettings.youtube_url}
+        poocoinUrl={activeSettings.poocoin_url}
       />
 
       <style jsx global>{`

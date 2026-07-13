@@ -34,10 +34,7 @@ export interface Profile {
   phone?: string;
   phone_verified?: boolean;
   birth_date?: string;
-  document_id?: string;
-  kyc_status?: 'pending' | 'approved' | 'rejected';
-  kyc_document_type?: string;
-  kyc_document_url?: string | null;
+
   two_fa_enabled?: boolean;
   two_fa_secret?: string | null;
   recovery_words?: string | null;
@@ -58,6 +55,10 @@ export interface CoinSettings {
   instagram_url: string;
   dexscreener_url: string;
   raydium_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+  youtube_url: string;
+  poocoin_url: string;
   swap_rate: number;
   swap_rate_usdt: number;
   updated_at: string;
@@ -139,8 +140,12 @@ const initMockDB = () => {
       discord_url: 'https://discord.gg/MacheteCoin',
       instagram_url: 'https://instagram.com/MacheteCoin',
       dexscreener_url: 'https://dexscreener.com/',
-      raydium_url: 'https://quickswap.exchange/',
-      swap_rate: 1000000.0,
+      raydium_url: 'https://raydium.io/',
+      facebook_url: 'https://facebook.com/MacheteCoin',
+      tiktok_url: 'https://tiktok.com/@MacheteCoin',
+      youtube_url: 'https://youtube.com/@MacheteCoin',
+      poocoin_url: 'https://poocoin.app/',
+      swap_rate: 2500000.0,
       swap_rate_usdt: 2500000.0,
       updated_at: new Date().toISOString(),
     };
@@ -238,11 +243,8 @@ export const MacheteService = {
     phone?: string;
     phoneVerified?: boolean;
     birthDate?: string;
-    documentId?: string;
     role?: 'user' | 'admin';
-    kycStatus?: 'pending' | 'approved' | 'rejected';
-    kycDocumentType?: string;
-    kycDocumentUrl?: string;
+
     avatarUrl?: string;
     twoFaEnabled?: boolean;
     twoFaSecret?: string;
@@ -250,7 +252,7 @@ export const MacheteService = {
   }) => {
     const { 
       email, username, password, firstName, lastName, phone, phoneVerified, 
-      birthDate, documentId, role, kycStatus, kycDocumentType, kycDocumentUrl,
+      birthDate, role,
       avatarUrl, twoFaEnabled, twoFaSecret, recoveryWords 
     } = params;
     MacheteService.init();
@@ -267,11 +269,8 @@ export const MacheteService = {
               phone,
               phone_verified: phoneVerified || false,
               birth_date: birthDate,
-              document_id: documentId,
               role: role || 'user',
-              kyc_status: kycStatus || 'pending',
-              kyc_document_type: kycDocumentType || 'DNI',
-              kyc_document_url: kycDocumentUrl || null,
+
               avatar_url: avatarUrl || null,
               two_fa_enabled: twoFaEnabled || false,
               two_fa_secret: twoFaSecret || null,
@@ -311,10 +310,7 @@ export const MacheteService = {
         phone: phone || '',
         phone_verified: phoneVerified || false,
         birth_date: birthDate || '',
-        document_id: documentId || '',
-        kyc_status: isFirstAdmin ? 'approved' : (kycStatus || 'pending'),
-        kyc_document_type: kycDocumentType || 'DNI',
-        kyc_document_url: kycDocumentUrl || null,
+
         two_fa_enabled: twoFaEnabled || false,
         two_fa_secret: twoFaSecret || null,
         recovery_words: recoveryWords || null,
@@ -365,9 +361,19 @@ export const MacheteService = {
           password: password || 'machete-default-pass-change-me',
         });
         if (error) {
-          // console.error removed to avoid Next.js dev server red overlay on invalid login
           return { success: false, error: error.message || 'Error de inicio de sesión' };
         }
+
+        // MFA Check
+        const { data: mfaData } = await supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (mfaData && mfaData.nextLevel === 'aal2') {
+           const factors = data.user?.factors || [];
+           const totpFactor = factors.find((f: any) => f.factor_type === 'totp' && f.status === 'verified');
+           if (totpFactor) {
+             return { success: true, requiresMFA: true, factorId: totpFactor.id, user: data.user };
+           }
+        }
+
         return { success: true, user: data.user };
       } catch (err: any) {
         console.error("SignIn exception:", err);
@@ -400,10 +406,7 @@ export const MacheteService = {
           phone: '',
           phone_verified: false,
           birth_date: '',
-          document_id: '',
-          kyc_status: isFirstAdmin ? 'approved' : 'pending',
-          kyc_document_type: 'DNI',
-          kyc_document_url: null,
+
           two_fa_enabled: false,
           terms_accepted: true,
           created_at: new Date().toISOString(),
@@ -471,6 +474,48 @@ export const MacheteService = {
         }
       }
       return session;
+    }
+  },
+
+  enrollMFA: async () => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient.auth.mfa.enroll({ factorType: 'totp' });
+        if (error) return { success: false, error: error.message };
+        return { success: true, factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      let randomSecret = '';
+      for (let i = 0; i < 16; i++) {
+        randomSecret += base32Chars.charAt(Math.floor(Math.random() * base32Chars.length));
+      }
+      return { success: true, factorId: 'mock-factor-id', qrCode: '', secret: randomSecret };
+    }
+  },
+
+  challengeAndVerifyMFA: async (factorId: string, code: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        const { data: challenge, error: challengeError } = await supabaseClient.auth.mfa.challenge({ factorId });
+        if (challengeError) return { success: false, error: challengeError.message };
+        
+        const { data, error } = await supabaseClient.auth.mfa.verify({
+          factorId,
+          challengeId: challenge.id,
+          code
+        });
+        if (error) return { success: false, error: error.message };
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      return { success: true };
     }
   },
 
@@ -669,30 +714,6 @@ export const MacheteService = {
       }
     }
     return true;
-  },
-
-  checkUserTwoFaEnabled: async (loginInput: string) => {
-    MacheteService.init();
-    if (isRealSupabaseConfigured() && supabaseClient) {
-      try {
-        const { data } = await supabaseClient
-          .from('profiles')
-          .select('two_fa_enabled')
-          .or(`username.eq."${loginInput}",phone.eq."${loginInput}",email.eq."${loginInput}"`)
-          .maybeSingle();
-        return !!data?.two_fa_enabled;
-      } catch (err) {
-        return false;
-      }
-    } else {
-      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
-      const user = profiles.find((p) => 
-        p.username.toLowerCase() === loginInput.toLowerCase() ||
-        p.email?.toLowerCase() === loginInput.toLowerCase() ||
-        p.phone === loginInput
-      );
-      return !!user?.two_fa_enabled;
-    }
   },
 
   checkDuplicateField: async (field: 'email' | 'username' | 'phone', value: string) => {

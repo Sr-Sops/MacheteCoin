@@ -43,8 +43,12 @@ export default function AdminPanel() {
   const [telegramUrl, setTelegramUrl] = useState('');
   const [discordUrl, setDiscordUrl] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [tiktokUrl, setTiktokUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [dexscreenerUrl, setDexscreenerUrl] = useState('');
   const [raydiumUrl, setRaydiumUrl] = useState('');
+  const [poocoinUrl, setPoocoinUrl] = useState('');
 
   useEffect(() => {
     MacheteService.init();
@@ -78,8 +82,12 @@ export default function AdminPanel() {
       setTelegramUrl(s.telegram_url);
       setDiscordUrl(s.discord_url);
       setInstagramUrl(s.instagram_url || '');
+      setFacebookUrl(s.facebook_url || '');
+      setTiktokUrl(s.tiktok_url || '');
+      setYoutubeUrl(s.youtube_url || '');
       setDexscreenerUrl(s.dexscreener_url);
       setRaydiumUrl(s.raydium_url);
+      setPoocoinUrl(s.poocoin_url || '');
 
       // Load Users
       const profiles = await MacheteService.getAllProfiles();
@@ -91,9 +99,16 @@ export default function AdminPanel() {
     loadSessionAndData();
   }, [router]);
 
-  const showNotification = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(''), 4000);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const showNotification = (msg: string, isError = false) => {
+    if (isError) {
+      setErrorMsg(msg);
+      setTimeout(() => setErrorMsg(''), 6000);
+    } else {
+      setSuccessMsg(msg);
+      setTimeout(() => setSuccessMsg(''), 4000);
+    }
   };
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
@@ -111,6 +126,8 @@ export default function AdminPanel() {
     setSaving(false);
     if (result.success) {
       showNotification('¡Parámetros de la moneda actualizados correctamente!');
+    } else {
+      showNotification(`Error: ${result.error || 'No se pudo guardar'}`, true);
     }
   };
 
@@ -122,28 +139,21 @@ export default function AdminPanel() {
       telegram_url: telegramUrl,
       discord_url: discordUrl,
       instagram_url: instagramUrl,
+      facebook_url: facebookUrl,
+      tiktok_url: tiktokUrl,
+      youtube_url: youtubeUrl,
       dexscreener_url: dexscreenerUrl,
       raydium_url: raydiumUrl,
+      poocoin_url: poocoinUrl,
     });
     setSaving(false);
     if (result.success) {
       showNotification('Enlace actualizado correctamente.');
+    } else {
+      showNotification(`Error: ${result.error || 'No se pudo guardar los enlaces'}`, true);
     }
   };
 
-  const handleKycStatusUpdate = async (userId: string, newStatus: 'approved' | 'rejected') => {
-    try {
-      const result = await MacheteService.updateProfile(userId, { kyc_status: newStatus });
-      if (result.success) {
-        setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, kyc_status: newStatus } : u));
-        showNotification(`KYC actualizado a ${newStatus}`);
-      } else {
-        alert('Error al actualizar el KYC.');
-      }
-    } catch (err) {
-      alert('Error en la conexión.');
-    }
-  };
 
   const handleStatusChange = async (id: number, status: 'pending' | 'in_progress' | 'completed') => {
     setSaving(true);
@@ -152,6 +162,8 @@ export default function AdminPanel() {
     if (result.success) {
       setRoadmap(prev => prev.map(p => p.id === id ? { ...p, status } : p));
       showNotification('¡Estado de la fase del roadmap actualizado!');
+    } else {
+      showNotification(`Error: ${result.error || 'No se pudo actualizar el estado'}`, true);
     }
   };
 
@@ -185,6 +197,10 @@ export default function AdminPanel() {
         telegramUrl={telegramUrl} 
         discordUrl={discordUrl} 
         instagramUrl={instagramUrl}
+        facebookUrl={facebookUrl}
+        tiktokUrl={tiktokUrl}
+        youtubeUrl={youtubeUrl}
+        poocoinUrl={poocoinUrl}
       />
       {/* Main body */}
       <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -199,7 +215,12 @@ export default function AdminPanel() {
         {/* Global Notification Banner */}
         {successMsg && (
           <div style={{
+            position: 'fixed',
+            top: '80px',
+            right: '20px',
+            zIndex: 9999,
             background: 'rgba(0, 255, 102, 0.08)',
+            backdropFilter: 'blur(10px)',
             border: '2px solid var(--color-green-neon)',
             borderRadius: '10px',
             padding: '1rem',
@@ -214,6 +235,32 @@ export default function AdminPanel() {
           }}>
             <CheckCircle size={18} />
             {successMsg}
+          </div>
+        )}
+
+        {errorMsg && (
+          <div style={{
+            position: 'fixed',
+            top: '80px',
+            right: '20px',
+            zIndex: 9999,
+            background: 'rgba(239, 68, 68, 0.08)',
+            backdropFilter: 'blur(10px)',
+            border: '2px solid var(--color-red)',
+            borderRadius: '10px',
+            padding: '1rem',
+            color: '#f87171',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            boxShadow: '0 0 15px rgba(239, 68, 68, 0.2)',
+            animation: 'pulse-slow 3s infinite',
+            maxWidth: '350px',
+          }}>
+            <X size={18} />
+            {errorMsg}
           </div>
         )}
 
@@ -285,7 +332,7 @@ export default function AdminPanel() {
             }}
           >
             <Shield size={16} style={{ marginRight: '0.25rem' }} />
-            Usuarios y KYC
+            Usuarios
           </button>
           
           <button 
@@ -448,6 +495,36 @@ export default function AdminPanel() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Facebook URL</label>
+                  <input 
+                    type="url" 
+                    value={facebookUrl} 
+                    onChange={(e) => setFacebookUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>TikTok URL</label>
+                  <input 
+                    type="url" 
+                    value={tiktokUrl} 
+                    onChange={(e) => setTiktokUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>YouTube URL</label>
+                  <input 
+                    type="url" 
+                    value={youtubeUrl} 
+                    onChange={(e) => setYoutubeUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>DexScreener URL</label>
                   <input 
                     type="url" 
@@ -463,6 +540,16 @@ export default function AdminPanel() {
                     type="url" 
                     value={raydiumUrl} 
                     onChange={(e) => setRaydiumUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>PooCoin URL</label>
+                  <input 
+                    type="url" 
+                    value={poocoinUrl} 
+                    onChange={(e) => setPoocoinUrl(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
@@ -619,9 +706,9 @@ export default function AdminPanel() {
 
               <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '1rem 0' }} />
 
-              <h3 style={{ fontSize: '1.25rem', color: 'var(--color-gold)' }}>Gestión de Usuarios y KYC</h3>
+              <h3 style={{ fontSize: '1.25rem', color: 'var(--color-gold)' }}>Gestión de Usuarios</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Visualiza y gestiona las cuentas registradas y aprueba o rechaza sus documentos KYC.
+                Visualiza y gestiona las cuentas registradas.
               </p>
 
               {usersLoading ? (
@@ -636,8 +723,6 @@ export default function AdminPanel() {
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Usuario</th>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Email</th>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Rol</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>KYC Info</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Estado KYC</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -652,27 +737,6 @@ export default function AdminPanel() {
                               padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', textTransform: 'uppercase'
                             }}>
                               {u.role}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {u.kyc_document_type ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                <span>{u.kyc_document_type}</span>
-                                {u.document_id && <span style={{ fontSize: '0.75rem' }}>ID: {u.document_id}</span>}
-                                {u.kyc_document_url && (
-                                  <a href={u.kyc_document_url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-green-neon)', textDecoration: 'underline', fontSize: '0.75rem' }}>
-                                    Ver Documento
-                                  </a>
-                                )}
-                              </div>
-                            ) : '-'}
-                          </td>
-                          <td style={{ padding: '0.75rem' }}>
-                            <span style={{
-                              color: u.kyc_status === 'approved' ? 'var(--color-green-neon)' : u.kyc_status === 'rejected' ? '#ef4444' : (!u.document_id && !u.kyc_document_url) ? '#ef4444' : 'var(--color-gold)',
-                              fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.75rem'
-                            }}>
-                              {u.kyc_status === 'approved' ? 'Aprobado' : u.kyc_status === 'rejected' ? 'Rechazado' : (!u.document_id && !u.kyc_document_url) ? 'Falta Verificación KYC' : 'Pendiente'}
                             </span>
                           </td>
                         </tr>
@@ -705,6 +769,11 @@ export default function AdminPanel() {
         twitterUrl={twitterUrl} 
         telegramUrl={telegramUrl} 
         discordUrl={discordUrl} 
+        instagramUrl={instagramUrl}
+        facebookUrl={facebookUrl}
+        tiktokUrl={tiktokUrl}
+        youtubeUrl={youtubeUrl}
+        poocoinUrl={poocoinUrl}
       />
 
       <style jsx global>{`
