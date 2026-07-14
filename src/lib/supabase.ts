@@ -1007,6 +1007,37 @@ export const MacheteService = {
       console.error("Error fetching real wallet balance via Polygon RPC", err);
       return 0;
     }
+  },
+  
+  getNativePolygonBalance: async (walletAddress: string) => {
+    try {
+      if (!walletAddress || !walletAddress.startsWith('0x')) return 0;
+
+      const rpcBody = {
+        jsonrpc: '2.0',
+        method: 'eth_getBalance',
+        params: [walletAddress, 'latest'],
+        id: 1
+      };
+
+      const res = await fetch('https://polygon-rpc.com/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rpcBody)
+      });
+      const data = await res.json();
+      
+      if (data.result && data.result !== '0x') {
+        const balanceHex = data.result;
+        const balanceWei = BigInt(balanceHex);
+        const balanceTokens = Number(balanceWei) / 10**18;
+        return balanceTokens;
+      }
+      return 0;
+    } catch (err) {
+      console.error("Error fetching native wallet balance via Polygon RPC", err);
+      return 0;
+    }
   }
 
 };

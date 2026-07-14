@@ -62,9 +62,9 @@ export default function Dashboard() {
   // GOOGLE LINK MOCK STATE
   const [googleLinked, setGoogleLinked] = useState(false);
 
-  // REAL DATA STATES
   const [realTokenData, setRealTokenData] = useState<any>(null);
   const [realBalance, setRealBalance] = useState<number>(0);
+  const [realNativeBalance, setRealNativeBalance] = useState<number>(0);
   const [isLoadingRealData, setIsLoadingRealData] = useState(false);
 
   useEffect(() => {
@@ -125,6 +125,9 @@ export default function Dashboard() {
         if (u.wallet_address) {
           const balance = await MacheteService.getPolygonWalletBalance(u.wallet_address, settings.contract_address);
           setRealBalance(balance);
+          
+          const nativeBal = await MacheteService.getNativePolygonBalance(u.wallet_address);
+          setRealNativeBalance(nativeBal);
         }
       }
     } catch (e) {
@@ -721,6 +724,27 @@ export default function Dashboard() {
                       <button onClick={handleUnlinkWallet} className="btn" style={{ padding: '0.4rem 0.75rem', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.75rem' }}>
                         Desvincular
                       </button>
+                    </div>
+                  </div>
+                  
+                  {/* Real Balance Display */}
+                  <div style={{ 
+                    display: 'flex', gap: '1rem', marginTop: '0.5rem', 
+                    background: 'rgba(0,0,0,0.2)', padding: '1rem', 
+                    borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' 
+                  }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>SALDO BLOCKCHAIN (POL)</span>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                        {isLoadingRealData ? <Loader2 size={16} className="spin-logo" /> : `${realNativeBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} POL`}
+                      </span>
+                    </div>
+                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>SALDO TOKEN (MCH)</span>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-gold)' }}>
+                        {isLoadingRealData ? <Loader2 size={16} className="spin-logo" /> : `${realBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} MCH`}
+                      </span>
                     </div>
                   </div>
                 </div>
