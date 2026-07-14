@@ -12,6 +12,7 @@ import {
   FileText, Upload, RefreshCw, Smartphone, ToggleLeft, ToggleRight, QrCode
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import Header from '@/components/Header';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -353,33 +354,8 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Top Banner Navigation */}
-      <header style={{
-        background: 'rgba(8, 17, 12, 0.95)',
-        borderBottom: '1px solid rgba(255, 199, 0, 0.15)',
-        padding: '1rem 0',
-        position: 'sticky', top: 0, zIndex: 50,
-      }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }} className="nav-link">
-            <ArrowLeft size={16} />
-            Volver a la Web
-          </Link>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            {activeUser.role === 'admin' && (
-              <Link href="/admin" className="btn btn-glass" style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', gap: '0.25rem' }}>
-                <Shield size={14} style={{ color: 'var(--color-gold)' }} />
-                Admin Panel
-              </Link>
-            )}
-            <button onClick={handleLogout} className="btn btn-glass" style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', gap: '0.25rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.1)' }}>
-              <LogOut size={14} />
-              Salir
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Standard Header */}
+      <Header />
 
       {/* Main Content Area */}
       <main className="container" style={{ flex: 1, padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>

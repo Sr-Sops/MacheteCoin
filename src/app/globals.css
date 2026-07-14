@@ -47,6 +47,7 @@ html, body {
   overflow-x: hidden;
   scroll-behavior: smooth;
   padding-bottom: 50px;
+  padding-top: 85px;
 }
 
 /* Background grid effect */
