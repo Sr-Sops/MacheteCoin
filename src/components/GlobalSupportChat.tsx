@@ -40,8 +40,7 @@ export default function GlobalSupportChat() {
     };
   }, []);
 
-  // Hide the widget completely if we are currently inside the admin panel
-  if (!user || pathname?.startsWith('/admin')) return null;
+  if (!user) return null;
 
   return <SupportChatWidget user={user} />;
 }
