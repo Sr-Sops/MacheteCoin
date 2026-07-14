@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User, Loader2 } from 'lucide-react';
 import { supabaseClient, Profile } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function SupportChatWidget({ user }: { user: Profile | null }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -279,7 +281,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
               <button 
                 onClick={() => {
                   setIsOpen(false);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  router.push('/login');
                 }}
                 className="btn btn-gold" 
                 style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
