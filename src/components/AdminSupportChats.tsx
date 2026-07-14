@@ -51,7 +51,8 @@ export default function AdminSupportChats() {
       const { data, error } = await supabaseClient
         .from('support_chats')
         .select(`
-          id, status, created_at, updated_at, user_id
+          id, status, created_at, updated_at, user_id,
+          support_messages (id)
         `)
         .order('updated_at', { ascending: false });
       
@@ -60,8 +61,11 @@ export default function AdminSupportChats() {
       }
       
       if (!error && data) {
+        // Filter out empty chats (ghost chats)
+        const validChats = data.filter(chat => chat.support_messages && chat.support_messages.length > 0);
+
         // Fetch profiles separately to avoid PostgREST foreign key relationship errors with auth.users
-        const userIds = data.map(c => c.user_id).filter(Boolean);
+        const userIds = validChats.map(c => c.user_id).filter(Boolean);
         let profilesData: any[] = [];
         if (userIds.length > 0) {
           const { data: pData } = await supabaseClient
@@ -71,7 +75,7 @@ export default function AdminSupportChats() {
           profilesData = pData || [];
         }
 
-        const chatsWithProfiles = data.map(chat => ({
+        const chatsWithProfiles = validChats.map(chat => ({
           ...chat,
           profiles: profilesData.find(p => p.id === chat.user_id) || null
         }));
