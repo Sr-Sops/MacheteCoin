@@ -42,7 +42,8 @@ export default function Dashboard() {
   const [profileMessage, setProfileMessage] = useState({ text: '', type: 'success' });
   const [profileLoading, setProfileLoading] = useState(false);
 
-
+  // METAMASK QR MODAL
+  const [showMetaMaskQrModal, setShowMetaMaskQrModal] = useState(false);
 
   // 2FA GOOGLE AUTH MODAL
   const [showTwoFaModal, setShowTwoFaModal] = useState(false);
@@ -140,7 +141,7 @@ export default function Dashboard() {
 
   const handleConnectMetaMask = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
-      setProfileMessage({ text: 'No se detectó MetaMask. Por favor instala la extensión o entra desde el navegador de MetaMask.', type: 'error' });
+      setShowMetaMaskQrModal(true);
       return;
     }
 
@@ -1155,6 +1156,51 @@ export default function Dashboard() {
           }
         }
       `}</style>
+      {/* METAMASK QR MODAL */}
+      {showMetaMaskQrModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '400px', width: '100%', padding: '2rem',
+            border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+            textAlign: 'center'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'center', color: '#F6851B' }}>
+              <Wallet size={48} />
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Conectar MetaMask</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.4 }}>
+                No detectamos la extensión de MetaMask en tu navegador actual.
+              </p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.4 }}>
+                Escanea este código QR con la <strong>aplicación móvil de MetaMask</strong>, o instala la extensión para PC.
+              </p>
+            </div>
+
+            <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block', margin: '0 auto' }}>
+              <QRCodeSVG 
+                value={`https://metamask.app.link/dapp/${typeof window !== 'undefined' ? window.location.host : 'machetecoin.com'}/dashboard`}
+                size={180}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMetaMaskQrModal(false)}
+              className="btn"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', marginTop: '0.5rem' }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
