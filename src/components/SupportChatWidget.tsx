@@ -12,12 +12,25 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load chat and messages when opened
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Initialize: check if there's an active chat without creating one
+  useEffect(() => {
+    if (user && supabaseClient) {
+      checkActiveChat();
+    }
+  }, [user]);
+
+  // When opened, if no chat, create one. If chat, mark read.
   useEffect(() => {
     if (isOpen && user && supabaseClient) {
-      loadChat();
+      if (!chatId) {
+        createAndLoadChat();
+      } else {
+        markMessagesAsRead();
+      }
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, chatId]);
 
   // Realtime subscription for new messages
   useEffect(() => {
@@ -29,7 +42,16 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `chat_id=eq.${chatId}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
+          const newMsg = payload.new as any;
+          setMessages((prev) => [...prev, newMsg]);
+          
+          if (!isOpen && newMsg.sender_id !== user?.id) {
+            setUnreadCount(prev => prev + 1);
+          } else if (isOpen && newMsg.sender_id !== user?.id) {
+            // mark as read immediately if open
+            supabaseClient.from('support_messages').update({ is_read: true }).eq('id', newMsg.id).then();
+          }
+          
           scrollToBottom();
         }
       )
@@ -40,53 +62,78 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     };
   }, [chatId]);
 
-  const loadChat = async () => {
+  const checkActiveChat = async () => {
     if (!user || !supabaseClient) return;
-    setLoading(true);
-
     try {
-      // Find active chat for user
-      const { data: chatData, error: chatError } = await supabaseClient
+      const { data: chatData } = await supabaseClient
         .from('support_chats')
-        .select('*')
+        .select('id')
         .eq('user_id', user.id)
         .eq('status', 'open')
         .maybeSingle();
 
-      let activeChatId = chatData?.id;
-
-      if (!activeChatId) {
-        // Create new chat
-        const { data: newChat, error: newChatError } = await supabaseClient
-          .from('support_chats')
-          .insert({ user_id: user.id, status: 'open' })
-          .select()
-          .single();
-
-        if (newChatError) throw newChatError;
-        activeChatId = newChat?.id;
+      if (chatData?.id) {
+        setChatId(chatData.id);
+        await loadMessages(chatData.id);
       }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-      setChatId(activeChatId);
+  const createAndLoadChat = async () => {
+    if (!user || !supabaseClient) return;
+    setLoading(true);
+    try {
+      const { data: newChat, error: newChatError } = await supabaseClient
+        .from('support_chats')
+        .insert({ user_id: user.id, status: 'open' })
+        .select()
+        .single();
 
-      // Load messages
-      if (activeChatId) {
-        const { data: msgData, error: msgError } = await supabaseClient
-          .from('support_messages')
-          .select('*')
-          .eq('chat_id', activeChatId)
-          .order('created_at', { ascending: true });
-
-        if (!msgError && msgData) {
-          setMessages(msgData);
-          scrollToBottom();
-        }
-      }
-    } catch (error) {
-      console.error('Error loading chat:', error);
+      if (newChatError) throw newChatError;
+      
+      setChatId(newChat.id);
+      setMessages([]);
+    } catch (e) {
+      console.error('Error creating chat:', e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMessages = async (activeChatId: string) => {
+    if (!supabaseClient) return;
+    const { data: msgData, error: msgError } = await supabaseClient
+      .from('support_messages')
+      .select('*')
+      .eq('chat_id', activeChatId)
+      .order('created_at', { ascending: true });
+
+    if (!msgError && msgData) {
+      setMessages(msgData);
+      
+      // Calculate unread
+      const unread = msgData.filter(m => !m.is_read && m.sender_id !== user?.id).length;
+      setUnreadCount(unread);
+      
+      if (isOpen && unread > 0) {
+        markMessagesAsRead(activeChatId);
+      }
+    }
+  };
+
+  const markMessagesAsRead = async (targetChatId?: string) => {
+    const id = targetChatId || chatId;
+    if (!id || !user || !supabaseClient) return;
+    
+    setUnreadCount(0);
+    await supabaseClient
+      .from('support_messages')
+      .update({ is_read: true })
+      .eq('chat_id', id)
+      .neq('sender_id', user.id)
+      .eq('is_read', false);
   };
 
   const scrollToBottom = () => {
@@ -264,9 +311,13 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
         </div>
       ) : (
         <button 
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            setIsOpen(true);
+            markMessagesAsRead();
+          }}
           style={{
             background: 'var(--color-gold)',
+            color: '#000',
             border: 'none',
             borderRadius: '50%',
             width: '60px',
@@ -274,15 +325,36 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 15px rgba(255, 199, 0, 0.4)',
             cursor: 'pointer',
-            transition: 'transform 0.2s ease',
-            color: '#000'
+            boxShadow: '0 4px 20px rgba(255, 199, 0, 0.4)',
+            transition: 'transform 0.2s',
+            position: 'relative'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           <MessageSquare size={28} />
+          {unreadCount > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '-5px',
+              right: '-5px',
+              background: '#ef4444',
+              color: '#fff',
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
+              minWidth: '22px',
+              height: '22px',
+              borderRadius: '11px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+              padding: '0 4px'
+            }}>
+              {unreadCount}
+            </div>
+          )}
         </button>
       )}
 

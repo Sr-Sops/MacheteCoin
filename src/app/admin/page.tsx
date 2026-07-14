@@ -30,6 +30,9 @@ export default function AdminPanel() {
   const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
 
+  // Unread messages global count for admins
+  const [globalUnreadCount, setGlobalUnreadCount] = useState(0);
+
   // Form states
   const [contractAddress, setContractAddress] = useState('');
   const [blockchainNetwork, setBlockchainNetwork] = useState('');
@@ -60,6 +63,32 @@ export default function AdminPanel() {
         return;
       }
       setUser(u);
+
+      const fetchUnreadCount = async () => {
+        if (!supabaseClient) return;
+        const { data } = await supabaseClient
+          .from('support_messages')
+          .select('id')
+          .eq('is_read', false)
+          .neq('sender_id', u.id);
+        if (data) setGlobalUnreadCount(data.length);
+      };
+
+      fetchUnreadCount();
+
+      let msgChannel: any = null;
+      if (supabaseClient) {
+        msgChannel = supabaseClient
+          .channel('admin_unread_count')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'support_messages' },
+            () => {
+              fetchUnreadCount();
+            }
+          )
+          .subscribe();
+      }
 
       // Load Settings and Roadmap
       const s = await MacheteService.getCoinSettings();
@@ -97,6 +126,9 @@ export default function AdminPanel() {
       setLoading(false);
     };
     loadSessionAndData();
+
+    // Note: We are not explicitly unsubscribing the msgChannel here for simplicity,
+    // as this is a top-level page component that rarely unmounts without a full navigation.
   }, [router]);
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -345,10 +377,32 @@ export default function AdminPanel() {
               padding: '0.5rem 1rem',
               fontSize: '0.9rem',
               borderRadius: '8px',
+              position: 'relative'
             }}
           >
             <MessageSquare size={16} style={{ marginRight: '0.25rem' }} />
             Soporte (Chats)
+            {globalUnreadCount > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '-5px',
+                right: '-5px',
+                background: '#ef4444',
+                color: '#fff',
+                fontSize: '0.65rem',
+                fontWeight: 'bold',
+                minWidth: '20px',
+                height: '20px',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                padding: '0 4px'
+              }}>
+                {globalUnreadCount}
+              </div>
+            )}
           </button>
         </div>
 

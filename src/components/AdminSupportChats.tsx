@@ -119,6 +119,16 @@ export default function AdminSupportChats() {
       if (!error && data) {
         setMessages(data);
         scrollToBottom();
+
+        // Mark as read
+        if (adminUser) {
+          await supabaseClient
+            .from('support_messages')
+            .update({ is_read: true })
+            .eq('chat_id', chatId)
+            .neq('sender_id', adminUser.id)
+            .eq('is_read', false);
+        }
       }
     } catch (e) {
       console.error(e);
