@@ -682,38 +682,37 @@ export const MacheteService = {
     }
   },
 
-  sendSmsOtp: async (phone: string) => {
+  sendSmsOtp: async (phone: string, appVerifier?: any) => {
     MacheteService.init();
-    if (isRealSupabaseConfigured() && supabaseClient) {
-      try {
-        const { error } = await supabaseClient.auth.signInWithOtp({
-          phone
-        });
-        if (error) return { error: error.message };
-        return {};
-      } catch (err: any) {
-        return { error: err?.message || String(err) };
-      }
+    
+    // In mock mode, we just return success and handle the mock code in the UI
+    if (!isRealSupabaseConfigured() || !supabaseClient) {
+      return { success: true };
+    }
+
+    // Use Firebase for Phone Auth
+    if (!appVerifier) {
+      return { error: 'AppVerifier (reCAPTCHA) is required for Firebase Phone Auth.' };
+    }
+    
+    const result = await sendFirebaseOtp(phone, appVerifier);
+    if (!result.success) {
+      return { error: result.error };
     }
     return {};
   },
 
   verifySmsOtp: async (phone: string, token: string) => {
     MacheteService.init();
-    if (isRealSupabaseConfigured() && supabaseClient) {
-      try {
-        const { data, error } = await supabaseClient.auth.verifyOtp({
-          phone,
-          token,
-          type: 'sms'
-        });
-        if (error) return false;
-        return !!data.user || !!data.session;
-      } catch (err: any) {
-        return false;
-      }
+    
+    // In mock mode, the UI handles verification
+    if (!isRealSupabaseConfigured() || !supabaseClient) {
+      return true;
     }
-    return true;
+
+    // Use Firebase to verify the OTP
+    const success = await verifyFirebaseOtp(token);
+    return success;
   },
 
   checkDuplicateField: async (field: 'email' | 'username' | 'phone', value: string) => {

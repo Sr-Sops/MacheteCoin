@@ -69,8 +69,13 @@ export default function AdminSetup() {
       console.log("MacheteService.signUp response JSON:", JSON.stringify(res));
 
       if (res.success) {
-        // Successful signup, redirect directly to admin panel!
-        router.push('/admin');
+        // Successful signup, handle confirmation
+        if (!isMock) {
+          alert("¡Administrador registrado! Verifica el correo (soporte@machetecoin.es) para activar la cuenta antes de iniciar sesión.");
+          router.push('/login');
+        } else {
+          router.push('/admin');
+        }
         router.refresh();
       } else {
         const errMsg = getErrorMessage((res as any).error);

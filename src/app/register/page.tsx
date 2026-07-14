@@ -11,7 +11,7 @@ import {
   AlertCircle, Copy, HelpCircle, Key, FileCode, CheckSquare, Smartphone, Camera
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-
+import { setupRecaptcha } from '@/lib/firebase';
 const BIP39_WORDS = [
   'alpha', 'beta', 'gamma', 'delta', 'omega', 'machete', 'capybara', 'crypto',
   'token', 'wallet', 'blockchain', 'jungle', 'forest', 'river', 'gold', 'silver',
@@ -81,6 +81,8 @@ export default function Register() {
         setIsAdminSetup(true);
       }
     }
+
+    setupRecaptcha('recaptcha-container');
   }, []);
 
   const calculateAge = (dateStr: string) => {
@@ -156,25 +158,16 @@ export default function Register() {
         setOtpCode(code);
         setOtpSent(true);
         setShowOtpModal(true);
-        // Print it clearly to console for easy access during testing
         console.log(`[SMS VERIFIER] Código OTP generado: ${code}`);
       } else {
-        // CALL SUPABASE OTP AUTH API FOR REAL SMS VERIFICATION
-        const { error: authErr } = await MacheteService.sendSmsOtp(fullPhone);
+        // CALL FIREBASE OTP AUTH API
+        if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+          setupRecaptcha('recaptcha-container');
+        }
+        
+        const { error: authErr } = await MacheteService.sendSmsOtp(fullPhone, window.recaptchaVerifier);
         if (authErr) {
-          let errorMessage = typeof authErr === 'string' ? authErr : JSON.stringify(authErr);
-          if (errorMessage === '{}' || errorMessage === '"[object Object]"') errorMessage = 'Error desconocido al enviar SMS. Revisa la configuración de Twilio.';
-          
-          if (errorMessage.includes('Unsupported phone provider') || errorMessage.includes('sms') || errorMessage.toLowerCase().includes('provider')) {
-            console.log(`[SMS VERIFIER FALLBACK] Proveedor SMS no configurado en Supabase. Usando modo local.`);
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            setOtpCode(code);
-            setOtpSent(true);
-            setShowOtpModal(true);
-            console.log(`[SMS VERIFIER] Código OTP generado: ${code}`);
-          } else {
-            setError(errorMessage);
-          }
+          setError(typeof authErr === 'string' ? authErr : JSON.stringify(authErr));
         } else {
           setOtpSent(true);
           setShowOtpModal(true);
@@ -340,7 +333,13 @@ export default function Register() {
       });
 
       if (res.success) {
-        router.push('/dashboard');
+        if (!isMock) {
+          // Tell the user to check their email
+          alert("¡Registro exitoso! Por favor, verifica tu correo electrónico para poder iniciar sesión.\n\n(Puedes personalizar el mensaje y remitente en Supabase -> Authentication -> Email Templates)");
+          router.push('/login');
+        } else {
+          router.push('/dashboard');
+        }
         router.refresh();
       } else {
         setError(getErrorMessage((res as any).error) || 'Ocurrió un error al registrarse.');
@@ -1091,6 +1090,9 @@ export default function Register() {
           </div>
         </div>
       )}
+      
+      {/* Firebase reCAPTCHA Container (invisible) */}
+      <div id="recaptcha-container"></div>
     </main>
   );
 }

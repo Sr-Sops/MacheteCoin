@@ -192,10 +192,10 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
           background: 'rgba(5, 10, 7, 0.98)',
           backdropFilter: 'blur(20px)',
           borderTop: '1px solid rgba(255, 199, 0, 0.1)',
-          padding: '1.25rem 1.5rem',
+          padding: '1rem 1.25rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.25rem',
+          gap: '1rem',
           zIndex: 99,
         }}>
           {/* Mobile socials */}
