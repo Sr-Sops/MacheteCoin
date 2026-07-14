@@ -24,12 +24,10 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     }
   }, [user]);
 
-  // When opened, if no chat, create one. If chat, mark read.
+  // When opened, if chat exists, mark read.
   useEffect(() => {
     if (isOpen && user && supabaseClient) {
-      if (!chatId) {
-        createAndLoadChat();
-      } else {
+      if (chatId) {
         markMessagesAsRead();
       }
     }
@@ -84,26 +82,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     }
   };
 
-  const createAndLoadChat = async () => {
-    if (!user || !supabaseClient) return;
-    setLoading(true);
-    try {
-      const { data: newChat, error: newChatError } = await supabaseClient
-        .from('support_chats')
-        .insert({ user_id: user.id, status: 'open' })
-        .select()
-        .single();
 
-      if (newChatError) throw newChatError;
-      
-      setChatId(newChat.id);
-      setMessages([]);
-    } catch (e) {
-      console.error('Error creating chat:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadMessages = async (activeChatId: string) => {
     if (!supabaseClient) return;
@@ -147,21 +126,36 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !chatId || !user || !supabaseClient) return;
+    if (!inputValue.trim() || !user || !supabaseClient) return;
 
     const messageText = inputValue.trim();
     setInputValue('');
 
     try {
+      let activeChatId = chatId;
+
+      // Lazily create chat if it doesn't exist
+      if (!activeChatId) {
+        const { data: newChat, error: newChatError } = await supabaseClient
+          .from('support_chats')
+          .insert({ user_id: user.id, status: 'open' })
+          .select()
+          .single();
+          
+        if (newChatError) throw newChatError;
+        activeChatId = newChat.id;
+        setChatId(newChat.id);
+      }
+
       await supabaseClient
         .from('support_messages')
         .insert({
-          chat_id: chatId,
+          chat_id: activeChatId,
           sender_id: user.id,
           message: messageText
         });
       // Updating chat's updated_at
-      await supabaseClient.from('support_chats').update({ updated_at: new Date().toISOString() }).eq('id', chatId);
+      await supabaseClient.from('support_chats').update({ updated_at: new Date().toISOString() }).eq('id', activeChatId);
 
       // Send email notification via API
       fetch('/api/notify-chat', {
