@@ -40,7 +40,5 @@ export default function GlobalSupportChat() {
     };
   }, []);
 
-  if (!user) return null;
-
   return <SupportChatWidget user={user} />;
 }

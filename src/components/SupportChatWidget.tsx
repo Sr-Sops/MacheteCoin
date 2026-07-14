@@ -228,6 +228,14 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                 <Loader2 className="spin-logo" size={24} style={{ color: 'var(--color-gold)' }} />
               </div>
+            ) : !user ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: 'auto', marginBottom: 'auto', padding: '0 1rem' }}>
+                <div style={{ background: 'rgba(255,199,0,0.1)', padding: '1rem', borderRadius: '50%', width: '60px', height: '60px', margin: '0 auto 1rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={30} style={{ color: 'var(--color-gold)' }} />
+                </div>
+                <p style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Para contactar con Soporte, necesitas una cuenta.</p>
+                <p style={{ fontSize: '0.8rem' }}>Inicia sesión o regístrate en unos segundos para poder hablar con nosotros.</p>
+              </div>
             ) : messages.length === 0 ? (
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 'auto', marginBottom: 'auto' }}>
                 <p>Escribe tu mensaje a continuación.</p>
@@ -267,46 +275,43 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <form onSubmit={handleSendMessage} style={{ 
-            padding: '0.75rem', 
-            background: 'rgba(0,0,0,0.6)', 
-            borderTop: '1px solid rgba(255,255,255,0.05)',
-            display: 'flex',
-            gap: '0.5rem'
-          }}>
-            <input 
-              type="text" 
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Escribe tu mensaje..."
-              style={{
-                flex: 1,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '20px',
-                padding: '0.5rem 1rem',
-                color: 'var(--text-primary)',
-                outline: 'none',
-                fontSize: '0.85rem'
-              }}
-            />
-            <button type="submit" disabled={!inputValue.trim()} style={{
-              background: inputValue.trim() ? 'var(--color-gold)' : 'rgba(255,255,255,0.1)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: inputValue.trim() ? 'pointer' : 'not-allowed',
-              color: inputValue.trim() ? '#000' : 'rgba(255,255,255,0.3)',
-              transition: 'all 0.2s ease'
-            }}>
-              <Send size={16} />
-            </button>
-          </form>
+          {/* Chat Input */}
+          {!user ? (
+            <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 199, 0, 0.2)', background: 'rgba(255, 199, 0, 0.1)', display: 'flex', justifyContent: 'center' }}>
+              <button 
+                onClick={() => {
+                  setIsOpen(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="btn btn-gold" 
+                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+              >
+                Ir a Iniciar Sesión
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} style={{ padding: '1rem', borderTop: '1px solid rgba(255, 199, 0, 0.2)', display: 'flex', gap: '0.5rem', background: 'rgba(255, 199, 0, 0.1)' }}>
+              <input 
+                type="text" 
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Escribe tu mensaje..."
+                style={{
+                  flex: 1,
+                  background: 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255, 199, 0, 0.3)',
+                  borderRadius: '20px',
+                  padding: '0.5rem 1rem',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  fontSize: '0.9rem'
+                }}
+              />
+              <button type="submit" disabled={!inputValue.trim()} style={{ background: 'var(--color-gold)', color: '#000', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <Send size={18} />
+              </button>
+            </form>
+          )}
 
         </div>
       ) : (
