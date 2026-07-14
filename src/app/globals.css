@@ -325,3 +325,27 @@ td {
     margin-top: 1rem !important;
   }
 }
+
+/* Hide Google Translate top banner & tooltip */
+.goog-te-banner-frame.skiptranslate, 
+.skiptranslate > iframe,
+.goog-te-banner-frame {
+  display: none !important;
+}
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+  display: none !important;
+}
+.goog-tooltip {
+    display: none !important;
+}
+.goog-tooltip:hover {
+    display: none !important;
+}
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important; 
+    box-shadow: none !important;
+}
+body {
+  top: 0px !important;
+}
