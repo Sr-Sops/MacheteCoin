@@ -176,8 +176,6 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     }
   };
 
-  // Only show if user is logged in
-  if (!user) return null;
 
   return (
     <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
