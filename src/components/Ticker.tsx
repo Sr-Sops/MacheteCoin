@@ -10,8 +10,8 @@ export default function Ticker() {
     const fetchSettings = async () => {
       try {
         const s = await MacheteService.getCoinSettings();
-        if (s?.network) {
-          setNetwork(s.network);
+        if (s?.blockchain_network) {
+          setNetwork(s.blockchain_network);
         }
       } catch (e) {
         console.error('Error fetching settings for ticker:', e);
