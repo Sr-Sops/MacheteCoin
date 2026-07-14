@@ -506,9 +506,19 @@ export default function Dashboard() {
               {/* Verified Phone/Wallet details inside summary card */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Correo Electrónico Verificado:</span>
+                  <span style={{ color: '#4ade80', fontWeight: 'bold' }}>SÍ</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Teléfono Verificado por SMS:</span>
                   <span style={{ color: activeUser.phone_verified ? '#4ade80' : '#fbbf24', fontWeight: 'bold' }}>
                     {activeUser.phone_verified ? 'SÍ' : 'NO (Verificar en pestaña Mi Perfil)'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Autenticación 2FA Activada:</span>
+                  <span style={{ color: activeUser.two_fa_enabled ? '#4ade80' : '#fbbf24', fontWeight: 'bold' }}>
+                    {activeUser.two_fa_enabled ? 'SÍ' : 'NO (Configurar en pestaña Mi Perfil)'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
