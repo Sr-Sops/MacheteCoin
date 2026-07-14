@@ -49,7 +49,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
             setUnreadCount(prev => prev + 1);
           } else if (isOpen && newMsg.sender_id !== user?.id) {
             // mark as read immediately if open
-            supabaseClient.from('support_messages').update({ is_read: true }).eq('id', newMsg.id).then();
+            supabaseClient?.from('support_messages').update({ is_read: true }).eq('id', newMsg.id).then();
           }
           
           scrollToBottom();

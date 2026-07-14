@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MacheteService, Profile, CoinSettings, RoadmapPhase, getNativeToken } from '@/lib/supabase';
+import { MacheteService, Profile, CoinSettings, RoadmapPhase, getNativeToken, supabaseClient } from '@/lib/supabase';
 import { ArrowLeft, Shield, Save, Loader2, Settings, MessageSquare, ListTodo, CheckCircle, X } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';

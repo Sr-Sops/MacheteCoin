@@ -32,7 +32,7 @@ export default function AdminSupportChats() {
         .subscribe();
 
       return () => {
-        supabaseClient.removeChannel(chatsChannel);
+        supabaseClient?.removeChannel(chatsChannel);
       };
     }
   }, []);
