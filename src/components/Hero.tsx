@@ -196,23 +196,6 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
 
       </div>
 
-      {/* Ticker at the bottom of Hero */}
-      <div className="ticker-wrap" style={{ marginTop: '5rem' }}>
-        <div className="ticker">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <React.Fragment key={i}>
-              <div className="ticker-item">SUMINISTRO MÁXIMO: <span>1,000,000,000</span></div>
-              <div className="ticker-item">DIRECCIÓN: <span>{blockchainNetwork}</span></div>
-              <div className="ticker-item">COMPRA TAX: <span>0%</span></div>
-              <div className="ticker-item">VENTA TAX: <span>0%</span></div>
-              <div className="ticker-item">LIQUIDEZ: <span>QUEMADA 🔥</span></div>
-              <div className="ticker-item">SLIPPAGE: <span>0.1%</span></div>
-              <div className="ticker-item">CONTRATO: <span>RENUNCIADO 🗡️</span></div>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
       <style jsx global>{`
         .hero-grid {
           grid-template-columns: 1fr !important;

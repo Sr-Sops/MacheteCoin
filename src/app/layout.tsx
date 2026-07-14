@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 import GlobalSupportChat from '@/components/GlobalSupportChat';
+import Ticker from '@/components/Ticker';
 
 export default function RootLayout({
   children,
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body>
         {children}
         <GlobalSupportChat />
+        <Ticker />
       </body>
     </html>
   );
