@@ -9,7 +9,8 @@ import {
   ArrowLeft, Wallet, LogOut, Loader2, Coins, History, Copy, Check, 
   Shield, Clock, AlertCircle, User, Settings, Lock, Trash2, Key,
   CreditCard, ExternalLink, Calendar, CheckCircle2, ChevronRight, HelpCircle,
-  FileText, Upload, RefreshCw, Smartphone, ToggleLeft, ToggleRight, QrCode
+  FileText, Upload, RefreshCw, Smartphone, ToggleLeft, ToggleRight, QrCode,
+  TrendingUp, BarChart3, Database, Activity, LayoutDashboard, Percent
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '@/components/Header';
@@ -61,6 +62,11 @@ export default function Dashboard() {
   // GOOGLE LINK MOCK STATE
   const [googleLinked, setGoogleLinked] = useState(false);
 
+  // REAL DATA STATES
+  const [realTokenData, setRealTokenData] = useState<any>(null);
+  const [realBalance, setRealBalance] = useState<number>(0);
+  const [isLoadingRealData, setIsLoadingRealData] = useState(false);
+
   useEffect(() => {
     MacheteService.init();
     loadSession();
@@ -107,6 +113,25 @@ export default function Dashboard() {
     // Load swaps
     const userSwaps = await MacheteService.getUserSwaps(u.id);
     setSwaps(userSwaps);
+
+    // Load Real Data
+    setIsLoadingRealData(true);
+    try {
+      const settings = await MacheteService.getCoinSettings();
+      if (settings && settings.contract_address) {
+        const tokenData = await MacheteService.getRealTokenData(settings.contract_address);
+        setRealTokenData(tokenData);
+        
+        if (u.wallet_address) {
+          const balance = await MacheteService.getPolygonWalletBalance(u.wallet_address, settings.contract_address);
+          setRealBalance(balance);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load real data:", e);
+    }
+    setIsLoadingRealData(false);
+
     setLoading(false);
   };
 
@@ -490,18 +515,157 @@ export default function Dashboard() {
         {activeTab === 'resumen' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }} className="dashboard-grid">
             
-            {/* Card 1: Balance Details */}
-            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255, 199, 0, 0.15)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
-                <Coins size={24} />
-                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Acumulado</h3>
+            {/* --- NEW LAYOUT: DATOS REALES --- */}
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+              
+              {/* Card: Billetera Web3 (Real) */}
+              <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(0, 255, 102, 0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-green-neon)' }}>
+                  <Wallet size={24} />
+                  <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Billetera Web3 (Real)</h3>
+                </div>
+                
+                {activeUser.wallet_address ? (
+                  <div style={{ padding: '0.5rem 0' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>SALDO BLOCKCHAIN (POLYGON)</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                      <h2 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', fontFamily: 'var(--font-title)', marginTop: '0.25rem', overflowWrap: 'break-word' }}>
+                        {isLoadingRealData ? <Loader2 size={24} className="spin" /> : realBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      </h2>
+                      <span style={{ color: 'var(--color-green-neon)', fontSize: '1.5rem', fontWeight: 'bold' }}>MCH</span>
+                    </div>
+                    {realTokenData && realBalance > 0 && (
+                      <div style={{ fontSize: '0.9rem', color: '#4ade80', marginTop: '0.5rem' }}>
+                        ≈ ${(realBalance * realTokenData.priceUsd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>No has vinculado una billetera externa para cargar tu saldo real de la blockchain.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Card: Mercado (En Vivo) */}
+              <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255, 199, 0, 0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
+                  <TrendingUp size={24} />
+                  <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mercado (En Vivo)</h3>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>PRECIO (USD)</span>
+                    <div style={{ fontSize: '1.25rem', color: '#fff', fontWeight: 'bold' }}>
+                      {isLoadingRealData ? <Loader2 size={16} className="spin" /> : (realTokenData ? `$${realTokenData.priceUsd.toFixed(6)}` : '-')}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>24H CAMBIO</span>
+                    <div style={{ fontSize: '1.25rem', color: realTokenData?.priceChange24h >= 0 ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>
+                      {isLoadingRealData ? <Loader2 size={16} className="spin" /> : (realTokenData ? `${realTokenData.priceChange24h >= 0 ? '+' : ''}${realTokenData.priceChange24h.toFixed(2)}%` : '-')}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>MARKET CAP (FDV)</span>
+                    <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>
+                      {isLoadingRealData ? <Loader2 size={16} className="spin" /> : (realTokenData ? `$${realTokenData.fdv.toLocaleString()}` : '-')}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>LIQUIDEZ</span>
+                    <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>
+                      {isLoadingRealData ? <Loader2 size={16} className="spin" /> : (realTokenData ? `$${realTokenData.liquidityUsd.toLocaleString()}` : '-')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tokenomics */}
+            <div className="glass-panel" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', border: '1px solid rgba(255, 199, 0, 0.15)' }}>
+              <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em' }}>SUMINISTRO TOTAL</span>
+                <h2 style={{ fontSize: '3rem', color: 'var(--color-gold)', fontFamily: 'var(--font-title)', margin: '0.5rem 0' }}>1,000,000,000</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <Database size={16} /> Fijado de forma inmutable en el contrato
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'rgba(255, 199, 0, 0.05)', border: '1px solid rgba(255, 199, 0, 0.2)', borderRadius: '8px', width: 'fit-content', marginTop: '1rem' }}>
+                  <Activity size={16} color="var(--color-gold)" /> <span style={{ color: '#fff', fontSize: '0.9rem' }}>Distribución Equitativa y Transparente</span>
+                </div>
               </div>
               
+              <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Distribución de Tokens</h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    <span>Fondo de Liquidez (Raydium / DEX LP)</span>
+                    <span style={{ color: 'var(--color-gold)' }}>60%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: '60%', height: '100%', background: 'var(--color-gold)' }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Bloqueado y quemado permanentemente para asegurar la estabilidad.</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    <span>Comunidad y Airdrops</span>
+                    <span style={{ color: 'var(--color-green-neon)' }}>20%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: '20%', height: '100%', background: 'var(--color-green-neon)' }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Reservado para distribuir a los miembros activos del ecosistema.</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    <span>Marketing y Expansión</span>
+                    <span style={{ color: '#9ca3af' }}>10%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: '10%', height: '100%', background: '#9ca3af' }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Campañas de viralidad y publicidad para conquistar la jungla.</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    <span>Ecosistema y CEX Listings</span>
+                    <span style={{ color: '#10b981' }}>10%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: '10%', height: '100%', background: '#10b981' }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Reservado para futuros listados en exchanges centralizados.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SIMULATOR SECTION */}
+            <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#9ca3af' }}>
+                <LayoutDashboard size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Entorno de Simulación (Demo)</h3>
+              </div>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Esta sección refleja las operaciones simuladas realizadas en el Swap Widget de la página principal. Este saldo es exclusivamente de demostración y no representa activos reales en la blockchain.
+              </p>
+              
               <div style={{ padding: '0.5rem 0' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>DISPONIBLE EN <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1.2em', height: '1.2em' }} /> MacheteCoin</span>
-                <h2 style={{ fontSize: '3rem', color: 'var(--text-primary)', fontFamily: 'var(--font-title)', marginTop: '0.25rem', overflowWrap: 'break-word' }}>
-                  {activeUser.machete_balance.toLocaleString()} <span style={{ color: 'var(--color-gold)', fontSize: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.1em' }}><Image src="/logo-oficial.png" alt="$" width={32} height={32} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
-                </h2>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>SALDO SIMULADO ACUMULADO</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                  <h2 style={{ fontSize: '3rem', color: '#d1d5db', fontFamily: 'var(--font-title)', marginTop: '0.25rem', overflowWrap: 'break-word' }}>
+                    {activeUser.machete_balance.toLocaleString()}
+                  </h2>
+                  <span style={{ color: '#9ca3af', fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                    <Image src="/logo-oficial.png" alt="$" width={24} height={24} /> MCH
+                  </span>
+                </div>
               </div>
 
               {/* Verified Phone/Wallet details inside summary card */}
@@ -520,12 +684,6 @@ export default function Dashboard() {
                   <span>Autenticación 2FA Activada:</span>
                   <span style={{ color: activeUser.two_fa_enabled ? '#4ade80' : '#fbbf24', fontWeight: 'bold' }}>
                     {activeUser.two_fa_enabled ? 'SÍ' : 'NO (Configurar en pestaña Mi Perfil)'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Monedas Asignadas a Wallet:</span>
-                  <span style={{ color: activeUser.wallet_address ? '#4ade80' : '#fbbf24', fontWeight: 'bold' }}>
-                    {activeUser.wallet_address ? 'SÍ' : 'NO (Vincula tu billetera para operar)'}
                   </span>
                 </div>
               </div>

@@ -52,6 +52,11 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
     e.preventDefault();
     if (!user) return;
 
+    if (user.status === 'blocked') {
+      alert("Tu cuenta está bloqueada por algun motivo de infracción o mal uso de tu cuenta, porfavor contacta con el soporte lo mas breve posible, gracias.");
+      return;
+    }
+
     const amountNum = parseFloat(fromAmount);
     if (isNaN(amountNum) || amountNum <= 0) return;
 
@@ -93,13 +98,21 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
       position: 'relative',
     }}>
       {/* Title */}
-      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-title)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           Simulador MacheteSwap
         </h3>
-        <span style={{ fontSize: '0.75rem', background: 'rgba(0,255,102,0.1)', color: 'var(--color-green-neon)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(0,255,102,0.2)' }}>
-          TESTNET MOCK
+        <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.2)', fontWeight: 'bold' }}>
+          MODO SIMULADOR
         </span>
+      </div>
+
+      {/* Info Notice about Simulator */}
+      <div style={{ background: 'rgba(255, 199, 0, 0.05)', border: '1px solid rgba(255, 199, 0, 0.2)', borderRadius: '8px', padding: '0.75rem', marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+        <Info size={16} color="var(--color-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+          Esta es una herramienta de <strong>demostración</strong>. Los intercambios realizados aquí no utilizan fondos reales de la blockchain, solo sumarán saldo a tu cuenta en modo simulación (Demo).
+        </p>
       </div>
 
       {success ? (
@@ -137,7 +150,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
 
           {user && (
             <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-              Tu nuevo saldo: <span style={{ color: 'var(--color-gold)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>{user.machete_balance.toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={16} height={16} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
+              Tu nuevo saldo simulado: <span style={{ color: 'var(--color-gold)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>{user.machete_balance.toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={16} height={16} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
             </div>
           )}
 

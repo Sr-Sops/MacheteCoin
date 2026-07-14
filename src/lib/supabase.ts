@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { sendFirebaseOtp, verifyFirebaseOtp } from './firebase';
 
 // Check if credentials are placeholders or default values
 const isRealSupabaseConfigured = () => {
@@ -29,6 +30,7 @@ export interface Profile {
   wallet_address: string | null;
   machete_balance: number;
   role: 'user' | 'admin';
+  status: 'active' | 'blocked';
   first_name?: string;
   last_name?: string;
   phone?: string;
@@ -303,8 +305,9 @@ export const MacheteService = {
         username,
         avatar_url: avatarUrl || null,
         wallet_address: null,
-        machete_balance: isFirstAdmin ? 10000000.00 : 0.00,
+        machete_balance: 0.00,
         role: isFirstAdmin ? 'admin' : 'user',
+        status: 'active',
         first_name: firstName || '',
         last_name: lastName || '',
         phone: phone || '',
@@ -399,8 +402,9 @@ export const MacheteService = {
           email: loginInput.includes('@') ? loginInput : `${loginInput}@mock.com`,
           avatar_url: null,
           wallet_address: null,
-          machete_balance: isFirstAdmin ? 10000000 : 0.00,
+          machete_balance: 0.00,
           role: isFirstAdmin ? 'admin' : 'user',
+          status: 'active',
           first_name: isFirstAdmin ? 'Admin' : '',
           last_name: isFirstAdmin ? 'Machete' : '',
           phone: '',
@@ -936,6 +940,75 @@ export const MacheteService = {
       return swaps.filter((s) => s.user_id === userId).reverse();
     }
   },
+
+  // --- Real Web3 & Market Data Methods ---
+
+  getRealTokenData: async (contractAddress: string) => {
+    try {
+      if (!contractAddress) return null;
+      const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${contractAddress}`);
+      const data = await res.json();
+      if (data && data.pairs && data.pairs.length > 0) {
+        // Find the main pair, usually the highest liquidity
+        const pair = data.pairs[0];
+        return {
+          priceUsd: parseFloat(pair.priceUsd) || 0,
+          fdv: parseFloat(pair.fdv) || 0, // Fully Diluted Valuation (Market Cap)
+          volume24h: parseFloat(pair.volume?.h24) || 0,
+          priceChange24h: parseFloat(pair.priceChange?.h24) || 0,
+          liquidityUsd: parseFloat(pair.liquidity?.usd) || 0,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error("Error fetching token data from DexScreener", err);
+      return null;
+    }
+  },
+
+  getPolygonWalletBalance: async (walletAddress: string, contractAddress: string) => {
+    try {
+      if (!walletAddress || !contractAddress) return 0;
+      if (!walletAddress.startsWith('0x') || !contractAddress.startsWith('0x')) return 0;
+
+      // ABI encoding for balanceOf(address)
+      const methodId = '0x70a08231';
+      const addressParam = walletAddress.replace('0x', '').toLowerCase().padStart(64, '0');
+      const dataString = methodId + addressParam;
+
+      const rpcBody = {
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{
+          to: contractAddress,
+          data: dataString
+        }, 'latest'],
+        id: 1
+      };
+
+      const res = await fetch('https://polygon-rpc.com/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rpcBody)
+      });
+      const data = await res.json();
+      
+      if (data.result && data.result !== '0x') {
+        // result is hex string of balance (usually 18 decimals)
+        const balanceHex = data.result;
+        // BigInt can parse hex strings starting with 0x
+        const balanceWei = BigInt(balanceHex);
+        // Assuming 18 decimals for standard ERC20 on Polygon
+        const balanceTokens = Number(balanceWei) / 10**18;
+        return balanceTokens;
+      }
+      return 0;
+    } catch (err) {
+      console.error("Error fetching real wallet balance via Polygon RPC", err);
+      return 0;
+    }
+  }
+
 };
 // Helper for Network native tokens
 export const getNativeToken = (network: string): string => {

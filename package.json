@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@metamask/sdk-react": "^0.33.1",
     "@sumsub/websdk-react": "^2.6.3",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.1",

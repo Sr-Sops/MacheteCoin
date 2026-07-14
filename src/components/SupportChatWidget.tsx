@@ -14,6 +14,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -21,6 +22,25 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
   useEffect(() => {
     if (user && supabaseClient) {
       checkActiveChat();
+
+      // Listen for newly created chats by admin for this user
+      const chatChannel = supabaseClient
+        .channel(`user_chats_${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'support_chats', filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            if (payload.new.status === 'open') {
+              setChatId(payload.new.id);
+              loadMessages(payload.new.id);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabaseClient?.removeChannel(chatChannel);
+      };
     }
   }, [user]);
 
@@ -52,8 +72,39 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
             // mark as read immediately if open
             supabaseClient?.from('support_messages').update({ is_read: true }).eq('id', newMsg.id).then();
           }
+
+          if (newMsg.sender_id !== user?.id) {
+            try {
+              if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(e => console.error("Audio play error:", e));
+              }
+            } catch(e) {}
+          }
           
           scrollToBottom();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'support_chats', filter: `id=eq.${chatId}` },
+        () => {
+          setChatId(null);
+          setMessages([]);
+          setIsOpen(false);
+          setUnreadCount(0);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'support_chats', filter: `id=eq.${chatId}` },
+        (payload) => {
+          if (payload.new.status === 'closed') {
+            setChatId(null);
+            setMessages([]);
+            setIsOpen(false);
+            setUnreadCount(0);
+          }
         }
       )
       .subscribe();
@@ -120,7 +171,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
 
   const scrollToBottom = () => {
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
   };
 
@@ -175,7 +226,9 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
 
 
   return (
-    <div style={{ position: 'fixed', bottom: '4.5rem', right: '2rem', zIndex: 9999 }}>
+    <>
+      <audio ref={audioRef} src="/sounds/machete.mp3" preload="auto" />
+      <div style={{ position: 'fixed', bottom: '4.5rem', right: '2rem', zIndex: 9999 }}>
       
       {isOpen ? (
         <div className="glass-panel" style={{ 
@@ -198,11 +251,22 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ background: 'var(--color-gold)', borderRadius: '50%', padding: '0.3rem' }}>
-                <MessageSquare size={16} style={{ color: '#000' }} />
+                <MessageSquare size={20} />
               </div>
               <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                Soporte en Vivo
+                <span style={{ fontWeight: 'bold' }}>Soporte en Vivo</span>
               </h3>
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (audioRef.current) {
+                    audioRef.current.currentTime = 0;
+                    audioRef.current.play().catch(e => console.error(e));
+                  }
+                }} 
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', marginLeft: '0.5rem' }}
+                title="Probar sonido"
+              >🔔</button>
             </div>
             <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
               <X size={20} />
@@ -273,16 +337,16 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
           {/* Chat Input */}
           {!user ? (
             <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 199, 0, 0.2)', background: 'rgba(255, 199, 0, 0.1)', display: 'flex', justifyContent: 'center' }}>
-              <Link 
-                href="/login"
+              <button 
                 onClick={() => {
                   setIsOpen(false);
+                  router.push('/login');
                 }}
                 className="btn btn-gold" 
-                style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}
+                style={{ width: '100%', display: 'flex', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
               >
                 Ir a Iniciar Sesión
-              </Link>
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSendMessage} style={{ padding: '1rem', borderTop: '1px solid rgba(255, 199, 0, 0.2)', display: 'flex', gap: '0.5rem', background: 'rgba(255, 199, 0, 0.1)' }}>
@@ -359,5 +423,6 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       )}
 
     </div>
+    </>
   );
 }

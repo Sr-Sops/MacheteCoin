@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -29,9 +29,13 @@ export default function AdminPanel() {
   // Users Management states
   const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [forceChatUserId, setForceChatUserId] = useState<string | null>(null);
 
   // Unread messages global count for admins
   const [globalUnreadCount, setGlobalUnreadCount] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Form states
   const [contractAddress, setContractAddress] = useState('');
@@ -54,6 +58,20 @@ export default function AdminPanel() {
   const [poocoinUrl, setPoocoinUrl] = useState('');
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowUserModal(false);
+      }
+    };
+    if (showUserModal) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showUserModal]);
+
+  useEffect(() => {
+    let msgChannel: any = null;
+    let isMounted = true;
     MacheteService.init();
     const loadSessionAndData = async () => {
       const u = await MacheteService.getCurrentUser();
@@ -76,15 +94,33 @@ export default function AdminPanel() {
 
       fetchUnreadCount();
 
-      let msgChannel: any = null;
+      if (!isMounted) return;
+
       if (supabaseClient) {
+        // Ensure no lingering subscription exists
+        const existing = supabaseClient.getChannels().find(c => c.topic === 'realtime:admin_unread_count');
+        if (existing) {
+          await supabaseClient.removeChannel(existing);
+        }
+
         msgChannel = supabaseClient
           .channel('admin_unread_count')
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'support_messages' },
-            () => {
+            (payload) => {
               fetchUnreadCount();
+              if (payload.eventType === 'INSERT') {
+                const newMsg = payload.new as any;
+                if (newMsg.sender_id !== u.id) {
+                  try {
+                    if (audioRef.current) {
+                      audioRef.current.currentTime = 0;
+                      audioRef.current.play().catch(e => console.error("Audio play error:", e));
+                    }
+                  } catch(e) {}
+                }
+              }
             }
           )
           .subscribe();
@@ -127,8 +163,12 @@ export default function AdminPanel() {
     };
     loadSessionAndData();
 
-    // Note: We are not explicitly unsubscribing the msgChannel here for simplicity,
-    // as this is a top-level page component that rarely unmounts without a full navigation.
+    return () => {
+      isMounted = false;
+      if (msgChannel && supabaseClient) {
+        supabaseClient.removeChannel(msgChannel);
+      }
+    };
   }, [router]);
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -199,6 +239,32 @@ export default function AdminPanel() {
     }
   };
 
+  const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
+    if (!supabaseClient) return;
+    const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
+    
+    // Check confirmation only when blocking
+    if (newStatus === 'blocked') {
+      if (!window.confirm('¿Estás seguro de que deseas bloquear a este usuario? No podrá realizar transacciones.')) {
+        return;
+      }
+    }
+
+    setSaving(true);
+    const { error } = await supabaseClient.from('profiles').update({ status: newStatus }).eq('id', userId);
+    setSaving(false);
+
+    if (error) {
+      showNotification(`Error: ${error.message}`, true);
+    } else {
+      showNotification(newStatus === 'blocked' ? 'Usuario bloqueado.' : 'Usuario desbloqueado.');
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus as any } : u));
+      if (selectedUser?.id === userId) {
+        setSelectedUser({ ...selectedUser, status: newStatus as any });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -220,8 +286,8 @@ export default function AdminPanel() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
+    <div className="min-h-screen" style={{ background: '#050a07', display: 'flex', flexDirection: 'column' }}>
+      <audio ref={audioRef} src="/sounds/machete.mp3" preload="auto" />
       {/* Admin header */}
       {/* Standard Header */}
       <Header 
@@ -777,14 +843,30 @@ export default function AdminPanel() {
                       <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--color-gold)' }}>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Usuario</th>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Email</th>
+                        <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Estado</th>
                         <th style={{ padding: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Rol</th>
                       </tr>
                     </thead>
                     <tbody>
                       {allUsers.map((u) => (
-                        <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr 
+                          key={u.id} 
+                          onClick={() => { setSelectedUser(u); setShowUserModal(true); }}
+                          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
                           <td style={{ padding: '0.75rem' }}>{u.username || 'Sin usuario'}</td>
                           <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{u.email}</td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <span style={{ 
+                              background: u.status === 'blocked' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 255, 102, 0.15)', 
+                              color: u.status === 'blocked' ? '#ef4444' : 'var(--color-green-neon)',
+                              padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', textTransform: 'uppercase'
+                            }}>
+                              {u.status === 'blocked' ? 'Bloqueado' : 'Activo'}
+                            </span>
+                          </td>
                           <td style={{ padding: '0.75rem' }}>
                             <span style={{ 
                               background: u.role === 'admin' ? 'rgba(255,199,0,0.15)' : 'rgba(255,255,255,0.05)', 
@@ -810,9 +892,97 @@ export default function AdminPanel() {
             </div>
           )}
 
+          {/* User Profile Modal */}
+          {showUserModal && selectedUser && (
+            <div 
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => setShowUserModal(false)}
+            >
+              <div 
+                className="glass-panel"
+                style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '16px', position: 'relative' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  onClick={() => setShowUserModal(false)}
+                  style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                >
+                  <X size={24} />
+                </button>
+                <h3 style={{ fontSize: '1.5rem', color: 'var(--color-gold)', marginBottom: '1.5rem' }}>Ficha de Usuario</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Usuario</div>
+                    <div style={{ fontSize: '1.1rem' }}>{selectedUser.username || 'Sin configurar'}</div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email</div>
+                    <div style={{ fontSize: '1.1rem' }}>{selectedUser.email} {selectedUser.email && <span style={{ color: 'var(--color-green-neon)' }}>✓</span>}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Nombre y Apellidos</div>
+                    <div style={{ fontSize: '1.1rem' }}>{selectedUser.first_name || '-'} {selectedUser.last_name || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Saldo MacheteCoin</div>
+                    <div style={{ fontSize: '1.1rem', color: 'var(--color-gold)' }}>{selectedUser.machete_balance.toLocaleString()} MCH</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Teléfono</div>
+                    <div style={{ fontSize: '1.1rem' }}>{selectedUser.phone || '-'} {selectedUser.phone_verified ? <span style={{ color: 'var(--color-green-neon)' }}>✓</span> : ''}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fecha Nacimiento</div>
+                    <div style={{ fontSize: '1.1rem' }}>{selectedUser.birth_date || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rol / Estado</div>
+                    <div style={{ fontSize: '1.1rem', textTransform: 'capitalize' }}>
+                      {selectedUser.role} / <span style={{ color: selectedUser.status === 'blocked' ? '#ef4444' : 'var(--color-green-neon)' }}>{selectedUser.status === 'blocked' ? 'Bloqueado' : 'Activo'}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Registro / 2FA</div>
+                    <div style={{ fontSize: '1.1rem' }}>
+                      {selectedUser.two_fa_enabled ? <span style={{ color: 'var(--color-green-neon)' }}>Verificado</span> : <span style={{ color: '#ef4444' }}>No Verificado</span>}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dirección de Cartera / Contraseña</div>
+                    <div style={{ fontSize: '1.1rem' }}>
+                      {selectedUser.wallet_address ? <span style={{ color: 'var(--color-green-neon)' }}>Verificado</span> : <span style={{ color: '#ef4444' }}>No Verificado</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => handleToggleUserStatus(selectedUser.id, selectedUser.status || 'active')}
+                    className="btn"
+                    style={{ flex: 1, background: selectedUser.status === 'blocked' ? 'var(--color-green-neon)' : '#ef4444', color: '#000', textAlign: 'center' }}
+                  >
+                    {selectedUser.status === 'blocked' ? 'Desbloquear Cuenta' : 'Bloquear Cuenta'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setForceChatUserId(selectedUser.id);
+                      setShowUserModal(false);
+                      setActiveTab('support');
+                    }}
+                    className="btn btn-gold"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                  >
+                    <MessageSquare size={18} /> Iniciar Chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tab 5: Support Chats */}
           {activeTab === 'support' && (
-            <AdminSupportChats />
+            <AdminSupportChats forceChatUserId={forceChatUserId} onChatForced={() => setForceChatUserId(null)} />
           )}
 
         </div>

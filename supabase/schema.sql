@@ -57,7 +57,13 @@ BEGIN
         ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('user', 'admin'));
     END IF;
     
+    -- Agregar status si no existe
     IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema='public' AND table_name='profiles' AND column_name='status'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN status TEXT DEFAULT 'active' CHECK (status IN ('active', 'blocked'));
+    END IF;
         SELECT 1 FROM pg_constraint WHERE conname = 'profiles_kyc_status_check'
     ) THEN
         ALTER TABLE public.profiles ADD CONSTRAINT profiles_kyc_status_check CHECK (kyc_status IN ('pending', 'approved', 'rejected'));
@@ -303,7 +309,7 @@ VALUES (
   'd3b07384-d113-41e8-a83d-e4c13a0c5f21', 
   'sopsdev', 
   'admin', 
-  1000000.0
+  0.0
 )
 ON CONFLICT (id) DO UPDATE
 SET role = 'admin',
@@ -419,6 +425,16 @@ CREATE POLICY "Admins can update all chats" ON public.support_chats FOR UPDATE U
     EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
 );
 
+DROP POLICY IF EXISTS "Admins can delete all chats" ON public.support_chats;
+CREATE POLICY "Admins can delete all chats" ON public.support_chats FOR DELETE USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Admins can insert any chat" ON public.support_chats;
+CREATE POLICY "Admins can insert any chat" ON public.support_chats FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
 -- 10. Support Messages Table
 CREATE TABLE IF NOT EXISTS public.support_messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -447,6 +463,11 @@ CREATE POLICY "Admins can view all messages" ON public.support_messages FOR SELE
 
 DROP POLICY IF EXISTS "Admins can insert any message" ON public.support_messages;
 CREATE POLICY "Admins can insert any message" ON public.support_messages FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+DROP POLICY IF EXISTS "Admins can delete all messages" ON public.support_messages;
+CREATE POLICY "Admins can delete all messages" ON public.support_messages FOR DELETE USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
 );
 
