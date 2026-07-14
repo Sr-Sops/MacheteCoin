@@ -956,14 +956,10 @@ export default function Dashboard() {
             </div>
 
             <div style={{ background: '#fff', padding: '0.75rem', borderRadius: '8px', display: 'inline-block', margin: '0 auto' }}>
-              {twoFaQrCodeSvg ? (
-                <div dangerouslySetInnerHTML={{ __html: twoFaQrCodeSvg }} style={{ width: 130, height: 130 }} />
-              ) : (
-                <QRCodeSVG 
-                  value={`otpauth://totp/MacheteCoin:${editEmail}?secret=${twoFaSecret}&issuer=MacheteCoin`}
-                  size={130}
-                />
-              )}
+              <QRCodeSVG 
+                value={`otpauth://totp/MacheteCoin:${editEmail || 'user'}?secret=${twoFaSecret}&issuer=MacheteCoin`}
+                size={130}
+              />
             </div>
 
             <div style={{
