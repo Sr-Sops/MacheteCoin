@@ -1158,16 +1158,23 @@ export default function Dashboard() {
       `}</style>
       {/* METAMASK QR MODAL */}
       {showMetaMaskQrModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
-        }}>
-          <div className="glass-panel" style={{
-            maxWidth: '400px', width: '100%', padding: '2rem',
-            border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
-            textAlign: 'center'
-          }}>
+        <div 
+          onClick={() => setShowMetaMaskQrModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+          }}
+        >
+          <div 
+            className="glass-panel" 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '400px', width: '100%', padding: '2rem',
+              border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+              textAlign: 'center'
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'center', color: '#F6851B' }}>
               <Wallet size={48} />
             </div>
@@ -1184,7 +1191,7 @@ export default function Dashboard() {
 
             <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block', margin: '0 auto' }}>
               <QRCodeSVG 
-                value={`https://metamask.app.link/dapp/${typeof window !== 'undefined' ? window.location.host : 'machetecoin.com'}/dashboard`}
+                value={`https://metamask.app.link/dapp/machete-coin.vercel.app/dashboard`}
                 size={180}
               />
             </div>
