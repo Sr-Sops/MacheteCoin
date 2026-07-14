@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { MacheteService, Profile, supabaseClient } from '@/lib/supabase';
 import SupportChatWidget from './SupportChatWidget';
 
 export default function GlobalSupportChat() {
   const [user, setUser] = useState<Profile | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const loadUser = async () => {
       const u = await MacheteService.getCurrentUser();
-      if (u && u.role !== 'admin') {
+      if (u) {
         setUser(u);
       } else {
         setUser(null);
@@ -38,7 +40,8 @@ export default function GlobalSupportChat() {
     };
   }, []);
 
-  if (!user) return null;
+  // Hide the widget completely if we are currently inside the admin panel
+  if (!user || pathname?.startsWith('/admin')) return null;
 
   return <SupportChatWidget user={user} />;
 }
