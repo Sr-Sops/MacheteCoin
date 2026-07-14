@@ -451,9 +451,41 @@ export default function AdminPanel() {
           {activeTab === 'socials' && (
             <form onSubmit={handleSaveSocials} className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', color: 'var(--color-gold)' }}>Editar Enlaces de Redes Sociales y DEX</h3>
-              
+              <h4 style={{ fontSize: '1rem', color: 'var(--color-green-neon)', marginBottom: '-0.5rem', marginTop: '0.5rem', borderBottom: '1px solid rgba(0, 255, 102, 0.2)', paddingBottom: '0.5rem' }}>Plataformas Cripto (DEX y Gráficos)</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }} className="admin-grid">
-                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>DexScreener URL</label>
+                  <input 
+                    type="url" 
+                    value={dexscreenerUrl} 
+                    onChange={(e) => setDexscreenerUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Raydium / Uniswap Exchange URL</label>
+                  <input 
+                    type="url" 
+                    value={raydiumUrl} 
+                    onChange={(e) => setRaydiumUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>PooCoin URL</label>
+                  <input 
+                    type="url" 
+                    value={poocoinUrl} 
+                    onChange={(e) => setPoocoinUrl(e.target.value)} 
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <h4 style={{ fontSize: '1rem', color: 'var(--color-green-neon)', marginBottom: '-0.5rem', marginTop: '1rem', borderBottom: '1px solid rgba(0, 255, 102, 0.2)', paddingBottom: '0.5rem' }}>Redes Sociales y Comunidad</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }} className="admin-grid">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>X / Twitter URL</label>
                   <input 
@@ -523,37 +555,6 @@ export default function AdminPanel() {
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>DexScreener URL</label>
-                  <input 
-                    type="url" 
-                    value={dexscreenerUrl} 
-                    onChange={(e) => setDexscreenerUrl(e.target.value)} 
-                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Raydium / Uniswap Exchange URL</label>
-                  <input 
-                    type="url" 
-                    value={raydiumUrl} 
-                    onChange={(e) => setRaydiumUrl(e.target.value)} 
-                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>PooCoin URL</label>
-                  <input 
-                    type="url" 
-                    value={poocoinUrl} 
-                    onChange={(e) => setPoocoinUrl(e.target.value)} 
-                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
-                  />
-                </div>
-
               </div>
 
               <button type="submit" disabled={saving} className="btn btn-gold" style={{ alignSelf: 'flex-start', gap: '0.5rem', marginTop: '1rem' }}>
