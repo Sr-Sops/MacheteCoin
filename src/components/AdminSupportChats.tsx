@@ -17,6 +17,24 @@ export default function AdminSupportChats() {
   useEffect(() => {
     loadAdminUser();
     loadChats();
+
+    // Listen for new chats
+    if (supabaseClient) {
+      const chatsChannel = supabaseClient
+        .channel('admin_support_chats')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'support_chats' },
+          () => {
+            loadChats(); // Reload chats when any change occurs (new chat or updated status)
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabaseClient.removeChannel(chatsChannel);
+      };
+    }
   }, []);
 
   const loadAdminUser = async () => {
@@ -33,13 +51,32 @@ export default function AdminSupportChats() {
       const { data, error } = await supabaseClient
         .from('support_chats')
         .select(`
-          id, status, created_at, updated_at,
-          profiles:user_id (id, username, email, avatar_url)
+          id, status, created_at, updated_at, user_id
         `)
         .order('updated_at', { ascending: false });
       
+      if (error) {
+        console.error('Error fetching support chats:', error);
+      }
+      
       if (!error && data) {
-        setChats(data);
+        // Fetch profiles separately to avoid PostgREST foreign key relationship errors with auth.users
+        const userIds = data.map(c => c.user_id).filter(Boolean);
+        let profilesData: any[] = [];
+        if (userIds.length > 0) {
+          const { data: pData } = await supabaseClient
+            .from('profiles')
+            .select('id, username, email, avatar_url')
+            .in('id', userIds);
+          profilesData = pData || [];
+        }
+
+        const chatsWithProfiles = data.map(chat => ({
+          ...chat,
+          profiles: profilesData.find(p => p.id === chat.user_id) || null
+        }));
+
+        setChats(chatsWithProfiles);
       }
     } catch (e) {
       console.error(e);
