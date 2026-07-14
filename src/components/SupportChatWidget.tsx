@@ -181,7 +181,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
 
 
   return (
-    <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
+    <div style={{ position: 'fixed', bottom: '4.5rem', right: '2rem', zIndex: 9999 }}>
       
       {isOpen ? (
         <div className="glass-panel" style={{ 
