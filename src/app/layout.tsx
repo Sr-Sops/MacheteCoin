@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 
 import GlobalSupportChat from '@/components/GlobalSupportChat';
 import Ticker from '@/components/Ticker';
+import MetaMaskProvider from '@/components/MetaMaskProvider';
 
 export default function RootLayout({
   children,
@@ -28,9 +29,11 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body>
-        {children}
-        <GlobalSupportChat />
-        <Ticker />
+        <MetaMaskProvider>
+          {children}
+          <Ticker />
+          <GlobalSupportChat />
+        </MetaMaskProvider>
       </body>
     </html>
   );

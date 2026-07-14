@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '@/components/Header';
+import { useSDK } from '@metamask/sdk-react';
 
 export default function Dashboard() {
   const router = useRouter();
+  const { sdk, connected, connecting, account } = useSDK();
   
   // Tab control ('resumen', 'historial', 'perfil')
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'perfil'>('resumen');
@@ -135,6 +137,28 @@ export default function Dashboard() {
       setProfileMessage({ text: 'Billetera vinculada correctamente. Tu saldo ya está asociado.', type: 'success' });
     } else {
       setProfileMessage({ text: result.error || 'Error al vincular la billetera.', type: 'error' });
+    }
+  };
+
+  const handleConnectMetaMask = async () => {
+    try {
+      setWalletLoading(true);
+      const accounts = await sdk?.connect();
+      if (accounts?.[0]) {
+        const address = accounts[0];
+        const result = await MacheteService.updateWallet(user!.id, address);
+        if (result.success) {
+          setUser(prev => prev ? { ...prev, wallet_address: address } : null);
+          setWalletInput(address);
+          setProfileMessage({ text: 'Billetera MetaMask vinculada correctamente.', type: 'success' });
+        } else {
+          setProfileMessage({ text: result.error || 'Error al vincular MetaMask.', type: 'error' });
+        }
+      }
+    } catch (err: any) {
+      setProfileMessage({ text: 'Conexión con MetaMask rechazada o fallida.', type: 'error' });
+    } finally {
+      setWalletLoading(false);
     }
   };
 
@@ -565,6 +589,31 @@ export default function Dashboard() {
                         Vincula tu clave pública de Polygon o Ethereum (ej. MetaMask, Trust Wallet) para asociar el saldo acumulado en compras de MacheteCoins.
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <button 
+                            type="button" 
+                            onClick={handleConnectMetaMask}
+                            disabled={walletLoading || connecting}
+                            style={{ 
+                              flex: 1, 
+                              background: '#F6851B', 
+                              color: '#fff', 
+                              border: 'none', 
+                              borderRadius: '10px', 
+                              padding: '0.75rem', 
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.5rem',
+                              cursor: (walletLoading || connecting) ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            {(walletLoading || connecting) ? <Loader2 size={18} className="spin-logo" /> : null}
+                            🦊 Conectar MetaMask
+                          </button>
+                        </div>
+                        <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>o ingresa tu clave manualmente:</div>
                         <input 
                           type="text" 
                           required
