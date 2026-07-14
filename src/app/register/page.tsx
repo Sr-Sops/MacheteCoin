@@ -255,8 +255,8 @@ export default function Register() {
 
       setStep(2);
     } else if (step === 2) {
-      if (!firstName || !lastName || !phoneNum || !birthDate) {
-        setError('Por favor, rellena todos los datos de contacto.');
+      if (!username || !firstName || !lastName || !phoneNum || !birthDate) {
+        setError('Por favor, rellena todos los datos personales y tu Alias.');
         return;
       }
 
