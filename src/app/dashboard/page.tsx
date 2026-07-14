@@ -13,11 +13,9 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '@/components/Header';
-import { useSDK } from '@metamask/sdk-react';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { sdk, connected, connecting, account } = useSDK();
   
   // Tab control ('resumen', 'historial', 'perfil')
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'perfil'>('resumen');
@@ -141,10 +139,16 @@ export default function Dashboard() {
   };
 
   const handleConnectMetaMask = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      setProfileMessage({ text: 'No se detectó MetaMask. Por favor instala la extensión o entra desde el navegador de MetaMask.', type: 'error' });
+      return;
+    }
+
     try {
       setWalletLoading(true);
-      const accounts = await sdk?.connect();
-      if (accounts?.[0]) {
+      const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+      
+      if (accounts && accounts[0]) {
         const address = accounts[0];
         const result = await MacheteService.updateWallet(user!.id, address);
         if (result.success) {
@@ -156,7 +160,11 @@ export default function Dashboard() {
         }
       }
     } catch (err: any) {
-      setProfileMessage({ text: 'Conexión con MetaMask rechazada o fallida.', type: 'error' });
+      if (err.code === 4001) {
+        setProfileMessage({ text: 'Conexión rechazada por el usuario.', type: 'error' });
+      } else {
+        setProfileMessage({ text: 'Error al conectar con MetaMask.', type: 'error' });
+      }
     } finally {
       setWalletLoading(false);
     }
@@ -593,7 +601,7 @@ export default function Dashboard() {
                           <button 
                             type="button" 
                             onClick={handleConnectMetaMask}
-                            disabled={walletLoading || connecting}
+                            disabled={walletLoading}
                             style={{ 
                               flex: 1, 
                               background: '#F6851B', 
@@ -606,10 +614,10 @@ export default function Dashboard() {
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: '0.5rem',
-                              cursor: (walletLoading || connecting) ? 'not-allowed' : 'pointer'
+                              cursor: walletLoading ? 'not-allowed' : 'pointer'
                             }}
                           >
-                            {(walletLoading || connecting) ? <Loader2 size={18} className="spin-logo" /> : null}
+                            {walletLoading ? <Loader2 size={18} className="spin-logo" /> : null}
                             🦊 Conectar MetaMask
                           </button>
                         </div>
