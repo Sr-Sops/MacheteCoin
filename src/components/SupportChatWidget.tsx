@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User, Loader2 } from 'lucide-react';
 import { supabaseClient, Profile } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SupportChatWidget({ user }: { user: Profile | null }) {
   const router = useRouter();
@@ -278,16 +279,16 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
           {/* Chat Input */}
           {!user ? (
             <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 199, 0, 0.2)', background: 'rgba(255, 199, 0, 0.1)', display: 'flex', justifyContent: 'center' }}>
-              <button 
+              <Link 
+                href="/login"
                 onClick={() => {
                   setIsOpen(false);
-                  router.push('/login');
                 }}
                 className="btn btn-gold" 
-                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+                style={{ width: '100%', display: 'flex', justifyContent: 'center', textDecoration: 'none' }}
               >
                 Ir a Iniciar Sesión
-              </button>
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSendMessage} style={{ padding: '1rem', borderTop: '1px solid rgba(255, 199, 0, 0.2)', display: 'flex', gap: '0.5rem', background: 'rgba(255, 199, 0, 0.1)' }}>
