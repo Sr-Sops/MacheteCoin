@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import { createAppKit } from '@reown/appkit/react';
-import { polygon, polygonAmoy } from '@reown/appkit/networks';
+import { polygon, polygonAmoy, mainnet, bsc, arbitrum, optimism } from '@reown/appkit/networks';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
@@ -24,13 +24,13 @@ const metadata = {
 
 const wagmiAdapter = new WagmiAdapter({
   ssr: true,
-  networks: [polygon, polygonAmoy],
+  networks: [polygon, polygonAmoy, mainnet, bsc, arbitrum, optimism],
   projectId
 });
 
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [polygon, polygonAmoy],
+  networks: [polygon, polygonAmoy, mainnet, bsc, arbitrum, optimism],
   projectId,
   metadata,
   features: {
