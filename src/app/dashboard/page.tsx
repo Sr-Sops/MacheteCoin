@@ -201,6 +201,20 @@ export default function Dashboard() {
     }
   };
 
+  const handleResetSimulation = async () => {
+    if (!user) return;
+    if (!confirm('¿Estás seguro de que deseas reiniciar todos tus datos ficticios (0 MCH) y borrar tu historial de simulación? Esta acción no se puede deshacer.')) return;
+    
+    const result = await MacheteService.resetSimulation(user.id);
+    if (result.success) {
+      setSwaps([]);
+      setUser(prev => prev ? { ...prev, machete_balance: 0 } : null);
+      setProfileMessage({ text: 'Datos de simulación reiniciados correctamente.', type: 'success' });
+    } else {
+      setProfileMessage({ text: result.error || 'Error al reiniciar datos.', type: 'error' });
+    }
+  };
+
   // EDIT PROFILE
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -848,9 +862,15 @@ export default function Dashboard() {
         {/* TAB 2: HISTORIAL */}
         {activeTab === 'historial' && (
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
-              <History size={24} />
-              <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Historial de Intercambios (DEX Swaps)</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-gold)' }}>
+                <History size={24} />
+                <h3 style={{ fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Historial de Intercambios (DEX Swaps)</h3>
+              </div>
+              <button onClick={handleResetSimulation} className="btn" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.8rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Trash2 size={14} />
+                Resetear Datos Ficticios
+              </button>
             </div>
 
             {swaps.length > 0 ? (

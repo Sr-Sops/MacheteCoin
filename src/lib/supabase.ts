@@ -941,6 +941,43 @@ export const MacheteService = {
     }
   },
 
+  resetSimulation: async (userId: string) => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      try {
+        await supabaseClient.from('swaps').delete().eq('user_id', userId);
+        
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({ machete_balance: 0 })
+          .eq('id', userId);
+        
+        if (error) return { success: false, error: error.message };
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err?.message || String(err) };
+      }
+    } else {
+      let swaps = getLocalStorageItem<SwapTx[]>(MOCK_STORAGE_KEYS.SWAPS, []);
+      swaps = swaps.filter(s => s.user_id !== userId);
+      setLocalStorageItem(MOCK_STORAGE_KEYS.SWAPS, swaps);
+
+      const profiles = getLocalStorageItem<Profile[]>(MOCK_STORAGE_KEYS.PROFILES, []);
+      const idx = profiles.findIndex((p) => p.id === userId);
+      if (idx !== -1) {
+        profiles[idx].machete_balance = 0;
+        setLocalStorageItem(MOCK_STORAGE_KEYS.PROFILES, profiles);
+        
+        const session = getLocalStorageItem<Profile | null>(MOCK_STORAGE_KEYS.SESSION, null);
+        if (session && session.id === userId) {
+          session.machete_balance = 0;
+          setLocalStorageItem(MOCK_STORAGE_KEYS.SESSION, session);
+        }
+      }
+      return { success: true };
+    }
+  },
+
   // --- Real Web3 & Market Data Methods ---
 
   getRealTokenData: async (contractAddress: string) => {
