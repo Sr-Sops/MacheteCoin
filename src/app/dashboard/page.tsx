@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '@/components/Header';
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount, useWalletInfo } from '@reown/appkit/react';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -47,6 +47,7 @@ export default function Dashboard() {
   // REOWN APPKIT (WALLETCONNECT)
   const { open: openAppKit } = useAppKit();
   const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+  const { walletInfo } = useWalletInfo();
 
   // Watch for AppKit connection to sync to Supabase
   useEffect(() => {
@@ -700,13 +701,23 @@ export default function Dashboard() {
                     padding: '1rem', borderRadius: '10px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
                   }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '0.2rem' }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--color-green-neon)', fontWeight: 700 }}>CLAVE PÚBLICA ENLAZADA:</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '240px', color: 'var(--text-primary)' }} className="wallet-text">
-                        {activeUser.wallet_address}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {walletInfo?.icon && (
+                          <img src={walletInfo.icon} alt={walletInfo.name} style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                        )}
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '240px', color: 'var(--text-primary)' }} className="wallet-text">
+                          {activeUser.wallet_address}
+                        </span>
+                      </div>
+                      {walletInfo?.name && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          Billetera: <strong style={{ color: 'var(--text-primary)' }}>{walletInfo.name}</strong>
+                        </span>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignSelf: 'flex-start' }}>
                       <button onClick={() => handleCopyWallet(activeUser.wallet_address!)} className="btn btn-glass" style={{ padding: '0.4rem' }}>
                         {copiedWallet ? <Check size={14} style={{ color: 'var(--color-green-neon)' }} /> : <Copy size={14} />}
                       </button>
