@@ -34,7 +34,9 @@ createAppKit({
   projectId,
   metadata,
   features: {
-    analytics: true
+    analytics: true,
+    email: false,
+    socials: false
   },
   themeVariables: {
     '--w3m-accent': '#22c55e', // Machete green
