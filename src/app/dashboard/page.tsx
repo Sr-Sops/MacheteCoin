@@ -714,6 +714,7 @@ export default function Dashboard() {
                     border: '1px solid rgba(0,255,102,0.15)',
                     padding: '1rem', borderRadius: '10px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                    flexWrap: 'wrap'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '0.2rem' }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--color-green-neon)', fontWeight: 700 }}>CLAVE PÚBLICA ENLAZADA:</span>
@@ -725,16 +726,34 @@ export default function Dashboard() {
                           {activeUser.wallet_address}
                         </span>
                       </div>
-                      {walletInfo?.name && (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          Billetera: <strong style={{ color: 'var(--text-primary)' }}>{walletInfo.name}</strong>
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', gap: '1rem', marginTop: '0.2rem', alignItems: 'center' }}>
+                        {walletInfo?.name && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            Billetera: <strong style={{ color: 'var(--text-primary)' }}>{walletInfo.name === 'AUTH' ? 'AppKit (Email/Social)' : walletInfo.name}</strong>
+                          </span>
+                        )}
+                        {isAppKitConnected && (
+                          <span style={{ fontSize: '0.7rem', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '0.2rem', background: 'rgba(74, 222, 128, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                            <div style={{ width: 6, height: 6, background: '#4ade80', borderRadius: '50%' }}></div>
+                            Conectada
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', alignSelf: 'flex-start' }}>
-                      <button onClick={() => handleCopyWallet(activeUser.wallet_address!)} className="btn btn-glass" style={{ padding: '0.4rem' }}>
+                      <button onClick={() => handleCopyWallet(activeUser.wallet_address!)} className="btn btn-glass" style={{ padding: '0.4rem' }} title="Copiar dirección">
                         {copiedWallet ? <Check size={14} style={{ color: 'var(--color-green-neon)' }} /> : <Copy size={14} />}
                       </button>
+                      <a 
+                        href={`https://polygonscan.com/address/${activeUser.wallet_address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-glass"
+                        style={{ padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="Ver en Polygonscan"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
                       <button onClick={handleUnlinkWallet} className="btn" style={{ padding: '0.4rem 0.75rem', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.75rem' }}>
                         Desvincular
                       </button>
