@@ -1,5 +1,4 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { sendFirebaseOtp, verifyFirebaseOtp } from './firebase';
 
 // Check if credentials are placeholders or default values
 const isRealSupabaseConfigured = () => {
@@ -694,16 +693,11 @@ export const MacheteService = {
       return { success: true };
     }
 
-    // Use Firebase for Phone Auth
-    if (!appVerifier) {
-      return { error: 'AppVerifier (reCAPTCHA) is required for Firebase Phone Auth.' };
+    const { error } = await supabaseClient.auth.signInWithOtp({ phone });
+    if (error) {
+      return { error: error.message };
     }
-    
-    const result = await sendFirebaseOtp(phone, appVerifier);
-    if (!result.success) {
-      return { error: result.error };
-    }
-    return {};
+    return { success: true };
   },
 
   verifySmsOtp: async (phone: string, token: string) => {
@@ -714,9 +708,11 @@ export const MacheteService = {
       return true;
     }
 
-    // Use Firebase to verify the OTP
-    const success = await verifyFirebaseOtp(token);
-    return success;
+    const { data, error } = await supabaseClient.auth.verifyOtp({ phone, token, type: 'sms' });
+    if (error || !data.user) {
+      return false;
+    }
+    return true;
   },
 
   checkDuplicateField: async (field: 'email' | 'username' | 'phone', value: string) => {

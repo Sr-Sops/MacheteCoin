@@ -11,7 +11,6 @@ import {
   AlertCircle, Copy, HelpCircle, Key, FileCode, CheckSquare, Smartphone, Camera
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { setupRecaptcha } from '@/lib/firebase';
 const BIP39_WORDS = [
   'alpha', 'beta', 'gamma', 'delta', 'omega', 'machete', 'capybara', 'crypto',
   'token', 'wallet', 'blockchain', 'jungle', 'forest', 'river', 'gold', 'silver',
@@ -74,15 +73,12 @@ export default function Register() {
     MacheteService.init();
     setIsMock(MacheteService.isMock());
     
-    // Check url search query
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get('setup') === 'admin' || searchParams.get('role') === 'admin') {
         setIsAdminSetup(true);
       }
     }
-
-    setupRecaptcha('recaptcha-container');
   }, []);
 
   const calculateAge = (dateStr: string) => {
@@ -160,12 +156,8 @@ export default function Register() {
         setShowOtpModal(true);
         console.log(`[SMS VERIFIER] Código OTP generado: ${code}`);
       } else {
-        // CALL FIREBASE OTP AUTH API
-        if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
-          setupRecaptcha('recaptcha-container');
-        }
-        
-        const { error: authErr } = await MacheteService.sendSmsOtp(fullPhone, window.recaptchaVerifier);
+        // CALL SUPABASE OTP AUTH API
+        const { error: authErr } = await MacheteService.sendSmsOtp(fullPhone);
         if (authErr) {
           setError(typeof authErr === 'string' ? authErr : JSON.stringify(authErr));
         } else {
@@ -1090,9 +1082,7 @@ export default function Register() {
           </div>
         </div>
       )}
-      
-      {/* Firebase reCAPTCHA Container (invisible) */}
-      <div id="recaptcha-container"></div>
+      {/* Modals are rendered here */}
     </main>
   );
 }
