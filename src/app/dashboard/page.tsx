@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '@/components/Header';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -43,9 +44,16 @@ export default function Dashboard() {
   const [profileMessage, setProfileMessage] = useState({ text: '', type: 'success' });
   const [profileLoading, setProfileLoading] = useState(false);
 
-  // METAMASK QR MODAL
-  const [showMetaMaskQrModal, setShowMetaMaskQrModal] = useState(false);
+  // REOWN APPKIT (WALLETCONNECT)
+  const { open: openAppKit } = useAppKit();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
 
+  // Watch for AppKit connection to sync to Supabase
+  useEffect(() => {
+    if (isAppKitConnected && appKitAddress && user && user.wallet_address !== appKitAddress) {
+      handleSyncAppKitWallet(appKitAddress);
+    }
+  }, [isAppKitConnected, appKitAddress, user]);
   // 2FA GOOGLE AUTH MODAL
   const [showTwoFaModal, setShowTwoFaModal] = useState(false);
   const [twoFaSecret, setTwoFaSecret] = useState('');
@@ -167,36 +175,17 @@ export default function Dashboard() {
     }
   };
 
-  const handleConnectMetaMask = async () => {
-    if (typeof window === 'undefined' || !(window as any).ethereum) {
-      setShowMetaMaskQrModal(true);
-      return;
+  const handleSyncAppKitWallet = async (address: string) => {
+    setWalletLoading(true);
+    const result = await MacheteService.updateWallet(user!.id, address);
+    if (result.success) {
+      setUser(prev => prev ? { ...prev, wallet_address: address } : null);
+      setWalletInput(address);
+      setProfileMessage({ text: 'Billetera vinculada correctamente.', type: 'success' });
+    } else {
+      setProfileMessage({ text: result.error || 'Error al vincular billetera.', type: 'error' });
     }
-
-    try {
-      setWalletLoading(true);
-      const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-      
-      if (accounts && accounts[0]) {
-        const address = accounts[0];
-        const result = await MacheteService.updateWallet(user!.id, address);
-        if (result.success) {
-          setUser(prev => prev ? { ...prev, wallet_address: address } : null);
-          setWalletInput(address);
-          setProfileMessage({ text: 'Billetera MetaMask vinculada correctamente.', type: 'success' });
-        } else {
-          setProfileMessage({ text: result.error || 'Error al vincular MetaMask.', type: 'error' });
-        }
-      }
-    } catch (err: any) {
-      if (err.code === 4001) {
-        setProfileMessage({ text: 'Conexión rechazada por el usuario.', type: 'error' });
-      } else {
-        setProfileMessage({ text: 'Error al conectar con MetaMask.', type: 'error' });
-      }
-    } finally {
-      setWalletLoading(false);
-    }
+    setWalletLoading(false);
   };
 
   const handleUnlinkWallet = async () => {
@@ -793,11 +782,11 @@ export default function Dashboard() {
                         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                           <button 
                             type="button" 
-                            onClick={handleConnectMetaMask}
+                            onClick={() => openAppKit()}
                             disabled={walletLoading}
                             style={{ 
                               flex: 1, 
-                              background: '#F6851B', 
+                              background: '#22c55e', 
                               color: '#fff', 
                               border: 'none', 
                               borderRadius: '10px', 
@@ -811,7 +800,7 @@ export default function Dashboard() {
                             }}
                           >
                             {walletLoading ? <Loader2 size={18} className="spin-logo" /> : null}
-                            🦊 Conectar MetaMask
+                            🔗 Conectar Billetera Web3
                           </button>
                         </div>
                         <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>o ingresa tu clave manualmente:</div>
@@ -1338,57 +1327,6 @@ export default function Dashboard() {
           }
         }
       `}</style>
-      {/* METAMASK QR MODAL */}
-      {showMetaMaskQrModal && (
-        <div 
-          onClick={() => setShowMetaMaskQrModal(false)}
-          style={{
-            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
-          }}
-        >
-          <div 
-            className="glass-panel" 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '400px', width: '100%', padding: '2rem',
-              border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
-              textAlign: 'center'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'center', color: '#F6851B' }}>
-              <Wallet size={48} />
-            </div>
-            
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Conectar MetaMask</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.4 }}>
-                No detectamos la extensión de MetaMask en tu navegador actual.
-              </p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.4 }}>
-                Escanea este código QR con la <strong>aplicación móvil de MetaMask</strong>, o instala la extensión para PC.
-              </p>
-            </div>
-
-            <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block', margin: '0 auto' }}>
-              <QRCodeSVG 
-                value={`https://metamask.app.link/dapp/machete-coin.vercel.app/dashboard`}
-                size={180}
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowMetaMaskQrModal(false)}
-              className="btn"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', marginTop: '0.5rem' }}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
 
     </div>
   );

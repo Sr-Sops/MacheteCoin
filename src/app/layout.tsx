@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 
 import GlobalSupportChat from '@/components/GlobalSupportChat';
 import Ticker from '@/components/Ticker';
+import { Web3Provider } from '@/components/Web3Provider';
 
 export default function RootLayout({
   children,
@@ -28,9 +29,11 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body>
-        {children}
-        <Ticker />
-        <GlobalSupportChat />
+        <Web3Provider>
+          {children}
+          <Ticker />
+          <GlobalSupportChat />
+        </Web3Provider>
       </body>
     </html>
   );
