@@ -185,7 +185,8 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                   fontFamily: 'var(--font-title)',
                   color: 'var(--text-primary)',
                   fontWeight: 600,
-                  width: '60%',
+                  flex: 1,
+                  minWidth: 0,
                 }}
               />
               <select 
@@ -247,7 +248,8 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
                   fontFamily: 'var(--font-title)',
                   color: 'var(--color-gold)',
                   fontWeight: 700,
-                  width: '70%',
+                  flex: 1,
+                  minWidth: 0,
                 }}
               />
               <span style={{

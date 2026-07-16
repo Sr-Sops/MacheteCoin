@@ -768,11 +768,11 @@ export default function Dashboard() {
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '0.2rem' }}>
                       <span style={{ fontSize: '0.7rem', color: 'var(--color-green-neon)', fontWeight: 700 }}>CLAVE PÚBLICA ENLAZADA:</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%', overflow: 'hidden' }}>
                         {walletInfo?.icon && (
-                          <img src={walletInfo.icon} alt={walletInfo.name} style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                          <img src={walletInfo.icon} alt={walletInfo.name} style={{ width: '18px', height: '18px', borderRadius: '4px', flexShrink: 0 }} />
                         )}
-                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '240px', color: 'var(--text-primary)' }} className="wallet-text">
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', maxWidth: '240px', color: 'var(--text-primary)' }} className="wallet-text">
                           {activeUser.wallet_address}
                         </span>
                       </div>
@@ -1539,10 +1539,12 @@ export default function Dashboard() {
             grid-template-columns: 1.1fr 0.9fr !important;
           }
           .wallet-text {
-            width: 320px !important;
+            max-width: 320px !important;
+            width: 100% !important;
           }
           .hash-text {
-            width: 250px !important;
+            max-width: 250px !important;
+            width: 100% !important;
           }
         }
       `}</style>
