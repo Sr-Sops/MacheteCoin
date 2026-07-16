@@ -68,6 +68,12 @@ export default function Dashboard() {
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
+  // SEED PHRASE MODAL
+  const [showSeedModal, setShowSeedModal] = useState(false);
+  const [generatedSeed, setGeneratedSeed] = useState('');
+  const [savedSeed, setSavedSeed] = useState(false);
+  const [seedLoading, setSeedLoading] = useState(false);
+
   // GOOGLE LINK MOCK STATE
   const [googleLinked, setGoogleLinked] = useState(false);
 
@@ -365,6 +371,50 @@ export default function Dashboard() {
         setGoogleLinked(true);
         setProfileMessage({ text: 'Cuenta de Google vinculada correctamente.', type: 'success' });
       }, 800);
+    }
+  };
+
+  // SEED PHRASE GENERATION
+  const handleGenerateSeed = () => {
+    if (user?.recovery_words) {
+      if (!confirm('Ya tienes una frase semilla asociada a tu cuenta. ¿Estás seguro de que quieres generar una nueva? La anterior dejará de ser válida para recuperar la cuenta.')) {
+        return;
+      }
+    }
+    const BIP39_WORDS = [
+      'alpha', 'beta', 'gamma', 'delta', 'omega', 'machete', 'capybara', 'crypto',
+      'token', 'wallet', 'blockchain', 'jungle', 'forest', 'river', 'gold', 'silver',
+      'bronze', 'diamond', 'emerald', 'ruby', 'safari', 'tokenomics', 'supply', 'ledger',
+      'node', 'miner', 'staking', 'yield', 'swap', 'liquidity', 'pool', 'chart',
+      'market', 'bull', 'bear', 'whale', 'shrimp', 'crab', 'octopus', 'dolphin',
+      'moon', 'rocket', 'orbit', 'planet', 'star', 'galaxy', 'universe', 'cosmos'
+    ];
+    const words: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const idx = Math.floor(Math.random() * BIP39_WORDS.length);
+      words.push(BIP39_WORDS[idx]);
+    }
+    setGeneratedSeed(words.join(' '));
+    setSavedSeed(false);
+    setShowSeedModal(true);
+  };
+
+  const handleCopySeed = () => {
+    navigator.clipboard.writeText(generatedSeed);
+    setProfileMessage({ text: 'Frase semilla copiada al portapapeles.', type: 'success' });
+  };
+
+  const handleConfirmSeed = async () => {
+    if (!user) return;
+    setSeedLoading(true);
+    const result = await MacheteService.updateProfile(user.id, { recovery_words: generatedSeed });
+    setSeedLoading(false);
+    if (result.success) {
+      setShowSeedModal(false);
+      setProfileMessage({ text: 'Frase semilla generada y guardada correctamente.', type: 'success' });
+      loadSession();
+    } else {
+      setProfileMessage({ text: 'Error al guardar la frase semilla.', type: 'error' });
     }
   };
 
@@ -1188,6 +1238,35 @@ export default function Dashboard() {
                   </button>
                 </div>
 
+                {/* Seed Phrase Generation */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                    <Shield size={20} style={{ color: activeUser.recovery_words ? 'var(--color-green-neon)' : 'var(--color-gold)', marginTop: '0.1rem' }} />
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Frase Semilla de Seguridad</h4>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                        {activeUser.recovery_words 
+                          ? 'Tienes una frase semilla configurada. Úsala para recuperar tu cuenta.'
+                          : 'Genera 12 palabras únicas que te permitirán recuperar tu cuenta en caso de pérdida de acceso.'}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleGenerateSeed}
+                    className="btn"
+                    style={{ 
+                      padding: '0.4rem 1rem', 
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: activeUser.recovery_words ? 'var(--color-green-neon)' : 'var(--color-gold)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    {activeUser.recovery_words ? 'Generar Nueva' : 'Configurar'}
+                  </button>
+                </div>
+
               </div>
             </div>
 
@@ -1292,6 +1371,96 @@ export default function Dashboard() {
                 style={{ flex: 1 }}
               >
                 Activar 2FA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SEED PHRASE SETUP MODAL */}
+      {showSeedModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '450px', width: '100%', padding: '2rem',
+            border: '1px solid rgba(255,199,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+            textAlign: 'center'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--color-gold)' }}>
+              <Shield size={48} />
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Frase Semilla (12 Palabras)</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: 1.45 }}>
+                Guarda estas 12 palabras en un lugar seguro. Son la única forma de recuperar tu cuenta si pierdes el acceso.
+              </p>
+            </div>
+
+            <div style={{ 
+              background: 'rgba(0,0,0,0.4)', 
+              border: '1px dashed rgba(255,199,0,0.3)', 
+              borderRadius: '8px', 
+              padding: '1.25rem',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.6rem',
+              justifyContent: 'center',
+              userSelect: 'all'
+            }}>
+              {generatedSeed.split(' ').map((word, idx) => (
+                <span key={idx} style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '0.3rem 0.6rem', 
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  fontFamily: 'monospace',
+                  color: 'var(--color-gold)'
+                }}>
+                  <span style={{ opacity: 0.5, marginRight: '0.3rem', fontSize: '0.7rem' }}>{idx + 1}</span>
+                  {word}
+                </span>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopySeed}
+              className="btn"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              <Copy size={16} />
+              Copiar Frase al Portapapeles
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', padding: '1rem', borderRadius: '8px', textAlign: 'left' }}>
+              <input type="checkbox" id="savedSeedCheckbox" checked={savedSeed} onChange={(e) => setSavedSeed(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#f87171', marginTop: '0.1rem' }} />
+              <label htmlFor="savedSeedCheckbox" style={{ fontSize: '0.8rem', color: '#f87171', lineHeight: 1.4, cursor: 'pointer' }}>
+                He guardado estas palabras en un lugar seguro y entiendo que MacheteCoin no puede recuperarlas por mí.
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowSeedModal(false)}
+                className="btn"
+                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSeed}
+                disabled={!savedSeed || seedLoading}
+                className="btn btn-gold"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                {seedLoading ? <Loader2 className="spin-logo" size={16} /> : null}
+                Guardar y Confirmar
               </button>
             </div>
           </div>
