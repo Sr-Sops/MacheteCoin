@@ -498,8 +498,8 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
                       try {
                         const { data: existingChats } = await supabaseClient!.from('support_tickets').select('*').eq('user_id', u.id).eq('status', 'open').limit(1);
                         if (existingChats && existingChats.length > 0) {
-                          setForceChatUserId(u.id);
-                          setShowUserModal(false);
+                          setSelectedUserId(u.id);
+                          setActiveRightTab('current');
                         } else {
                           const { data: newChat, error } = await supabaseClient!.from('support_tickets').insert({ user_id: u.id, username: u.username, status: 'open' }).select().single();
                           if (!error && newChat) {
