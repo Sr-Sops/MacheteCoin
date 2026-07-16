@@ -41,10 +41,10 @@ export default function AdminPanel() {
   const [contractAddress, setContractAddress] = useState('');
   const [blockchainNetwork, setBlockchainNetwork] = useState('');
   const [totalSupply, setTotalSupply] = useState('');
-  const [taxBuy, setTaxBuy] = useState(0);
-  const [taxSell, setTaxSell] = useState(0);
-  const [swapRate, setSwapRate] = useState<number>(0);
-  const [swapRateUsdt, setSwapRateUsdt] = useState<number>(0);
+  const [taxBuy, setTaxBuy] = useState<string>('0');
+  const [taxSell, setTaxSell] = useState<string>('0');
+  const [swapRate, setSwapRate] = useState<string>('0');
+  const [swapRateUsdt, setSwapRateUsdt] = useState<string>('0');
 
   const [twitterUrl, setTwitterUrl] = useState('');
   const [telegramUrl, setTelegramUrl] = useState('');
@@ -137,10 +137,10 @@ export default function AdminPanel() {
       setContractAddress(s.contract_address);
       setBlockchainNetwork(s.blockchain_network);
       setTotalSupply(s.total_supply);
-      setTaxBuy(Number(s.tax_buy));
-      setTaxSell(Number(s.tax_sell));
-      setSwapRate(s.swap_rate || 0);
-      setSwapRateUsdt(s.swap_rate_usdt || 0);
+      setTaxBuy(s.tax_buy ? s.tax_buy.toString() : '0');
+      setTaxSell(s.tax_sell ? s.tax_sell.toString() : '0');
+      setSwapRate(s.swap_rate ? s.swap_rate.toString() : '0');
+      setSwapRateUsdt(s.swap_rate_usdt ? s.swap_rate_usdt.toString() : '0');
 
       // Set Socials forms
       setTwitterUrl(s.twitter_url);
@@ -190,10 +190,10 @@ export default function AdminPanel() {
       contract_address: contractAddress,
       blockchain_network: blockchainNetwork,
       total_supply: totalSupply,
-      tax_buy: Number(taxBuy),
-      tax_sell: Number(taxSell),
-      swap_rate: Number(swapRate),
-      swap_rate_usdt: Number(swapRateUsdt),
+      tax_buy: parseFloat(taxBuy.replace(',', '.')),
+      tax_sell: parseFloat(taxSell.replace(',', '.')),
+      swap_rate: parseFloat(swapRate.replace(',', '.')),
+      swap_rate_usdt: parseFloat(swapRateUsdt.replace(',', '.')),
     });
     setSaving(false);
     if (result.success) {
@@ -519,9 +519,9 @@ export default function AdminPanel() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>Swap Rate (Ratio <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} /> MacheteCoin por {getNativeToken(blockchainNetwork)})</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     value={swapRate} 
-                    onChange={(e) => setSwapRate(Number(e.target.value))} 
+                    onChange={(e) => setSwapRate(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
@@ -529,9 +529,9 @@ export default function AdminPanel() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>Swap Rate USDT (Ratio <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} /> MacheteCoin por USDT)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     value={swapRateUsdt} 
-                    onChange={(e) => setSwapRateUsdt(Number(e.target.value))} 
+                    onChange={(e) => setSwapRateUsdt(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
@@ -539,10 +539,9 @@ export default function AdminPanel() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Impuesto Compra (Buy Tax %)</label>
                   <input 
-                    type="number" 
-                    step="0.01"
+                    type="text" 
                     value={taxBuy} 
-                    onChange={(e) => setTaxBuy(Number(e.target.value))} 
+                    onChange={(e) => setTaxBuy(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
@@ -550,10 +549,9 @@ export default function AdminPanel() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Impuesto Venta (Sell Tax %)</label>
                   <input 
-                    type="number" 
-                    step="0.01"
+                    type="text" 
                     value={taxSell} 
-                    onChange={(e) => setTaxSell(Number(e.target.value))} 
+                    onChange={(e) => setTaxSell(e.target.value)} 
                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#fff', outline: 'none' }}
                   />
                 </div>
