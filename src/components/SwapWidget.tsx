@@ -239,7 +239,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
               <input 
                 type="text" 
                 readOnly
-                value={toAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                value={toAmount.toLocaleString(undefined, { maximumFractionDigits: 10 })}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -273,7 +273,7 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Precio estimado</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>1 {fromToken} = {(fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate_usdt || 2500000)).toLocaleString()} <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>1 {fromToken} = {(fromToken === nativeToken ? Number(settings.swap_rate) : Number(settings.swap_rate_usdt || 2500000)).toLocaleString(undefined, { maximumFractionDigits: 10 })} <Image src="/logo-oficial.png" alt="$" width={14} height={14} style={{ width: '1em', height: '1em' }} /> MacheteCoin</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Tolerancia de Deslizamiento (Slippage)</span>

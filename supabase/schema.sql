@@ -88,15 +88,20 @@ CREATE TABLE IF NOT EXISTS public.coin_settings (
     contract_address TEXT DEFAULT '0x0000000000000000000000000000000000000000',
     blockchain_network TEXT DEFAULT 'Polygon',
     total_supply TEXT DEFAULT '1,000,000,000',
-    tax_buy NUMERIC(5, 2) DEFAULT 0.00,
-    tax_sell NUMERIC(5, 2) DEFAULT 0.00,
+    tax_buy NUMERIC(10, 4) DEFAULT 0.00,
+    tax_sell NUMERIC(10, 4) DEFAULT 0.00,
     twitter_url TEXT DEFAULT 'https://x.com/MacheteCoin',
     telegram_url TEXT DEFAULT 'https://t.me/MacheteCoin',
     discord_url TEXT DEFAULT 'https://discord.gg/MacheteCoin',
+    instagram_url TEXT DEFAULT 'https://instagram.com/MacheteCoin',
+    facebook_url TEXT DEFAULT 'https://facebook.com/MacheteCoin',
+    tiktok_url TEXT DEFAULT 'https://tiktok.com/@MacheteCoin',
+    youtube_url TEXT DEFAULT 'https://youtube.com/@MacheteCoin',
     dexscreener_url TEXT DEFAULT 'https://dexscreener.com/',
-    raydium_url TEXT DEFAULT 'https://quickswap.exchange/',
-    swap_rate NUMERIC(20, 2) DEFAULT 1000000.00, -- 1 Native Token = 1,000,000 $MACHETE
-    swap_rate_usdt NUMERIC(20, 2) DEFAULT 2500000.00, -- 1 USDT = 2,500,000 $MACHETE
+    raydium_url TEXT DEFAULT 'https://raydium.io/',
+    poocoin_url TEXT DEFAULT 'https://poocoin.app/',
+    swap_rate NUMERIC(40, 18) DEFAULT 1000000.00, -- 1 Native Token = X $MACHETE
+    swap_rate_usdt NUMERIC(40, 18) DEFAULT 2500000.00, -- 1 USDT = X $MACHETE
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
