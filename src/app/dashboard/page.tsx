@@ -517,7 +517,7 @@ export default function Dashboard() {
 
         {/* Dashboard Tabs Header */}
         <div style={{
-          display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', gap: '1rem', marginTop: '0.5rem'
+          display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap'
         }}>
           <button 
             onClick={() => setActiveTab('resumen')}

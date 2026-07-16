@@ -368,6 +368,7 @@ export default function AdminPanel() {
           borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
           gap: '1rem',
           paddingBottom: '0.5rem',
+          flexWrap: 'wrap',
         }}>
           <button 
             onClick={() => setActiveTab('coin')}
