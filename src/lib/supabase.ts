@@ -86,19 +86,20 @@ export interface SwapTx {
   created_at: string;
 }
 
-export interface SupportChat {
+export interface SupportTicket {
   id: string;
   user_id: string;
+  username: string;
   status: 'open' | 'closed';
   created_at: string;
-  updated_at: string;
 }
 
 export interface SupportMessage {
   id: string;
-  chat_id: string;
+  ticket_id: string;
   sender_id: string;
   message: string;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -1002,6 +1003,88 @@ export const MacheteService = {
       return null;
     }
   },
+
+  // ----------------------------------------------------
+  // SUPPORT TICKET METHODS
+  // ----------------------------------------------------
+  getOrCreateSupportTicket: async (userId: string, username: string): Promise<{ success: boolean, ticket?: SupportTicket, error?: string }> => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      const { data: ticket } = await supabaseClient
+        .from('support_tickets')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'open')
+        .single();
+        
+      if (ticket) return { success: true, ticket: ticket as SupportTicket };
+      
+      const { data: newTicket, error } = await supabaseClient
+        .from('support_tickets')
+        .insert({ user_id: userId, username, status: 'open' })
+        .select()
+        .single();
+        
+      if (error) return { success: false, error: error.message };
+      return { success: true, ticket: newTicket as SupportTicket };
+    } else {
+      return { success: false, error: "Mock database no soporta tickets de soporte" };
+    }
+  },
+
+  getSupportMessages: async (ticketId: string): Promise<{ success: boolean, messages?: SupportMessage[], error?: string }> => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from('support_messages')
+        .select('*')
+        .eq('ticket_id', ticketId)
+        .order('created_at', { ascending: false });
+      if (error) return { success: false, error: error.message };
+      return { success: true, messages: data as SupportMessage[] };
+    }
+    return { success: true, messages: [] };
+  },
+
+  sendSupportMessage: async (ticketId: string, senderId: string, message: string, isAdmin: boolean = false): Promise<{ success: boolean, error?: string }> => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      const { error } = await supabaseClient
+        .from('support_messages')
+        .insert({ ticket_id: ticketId, sender_id: senderId, message, is_admin: isAdmin });
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    }
+    return { success: false, error: "Mock database no soporta enviar mensajes" };
+  },
+
+  getAllOpenTickets: async (): Promise<{ success: boolean, tickets?: SupportTicket[], error?: string }> => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from('support_tickets')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false });
+      if (error) return { success: false, error: error.message };
+      return { success: true, tickets: data as SupportTicket[] };
+    }
+    return { success: true, tickets: [] };
+  },
+
+  closeTicket: async (ticketId: string): Promise<{ success: boolean, error?: string }> => {
+    MacheteService.init();
+    if (isRealSupabaseConfigured() && supabaseClient) {
+      const { error } = await supabaseClient
+        .from('support_tickets')
+        .update({ status: 'closed' })
+        .eq('id', ticketId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    }
+    return { success: true };
+  },
+
 
   getPolygonWalletBalance: async (walletAddress: string, contractAddress: string) => {
     try {

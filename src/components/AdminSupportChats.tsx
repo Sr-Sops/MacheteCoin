@@ -36,7 +36,7 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
         .channel('admin_support_chats')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'support_chats' },
+          { event: '*', schema: 'public', table: 'support_tickets' },
           () => loadChats()
         )
         .subscribe();
@@ -59,12 +59,12 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
     setLoadingChats(true);
     try {
       const { data, error } = await supabaseClient
-        .from('support_chats')
+        .from('support_tickets')
         .select(`
-          id, status, created_at, updated_at, user_id,
+          id, status, created_at, user_id, username,
           support_messages (id)
         `)
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
       
       if (!error && data) {
         // We keep all chats. Even empty ones if they are open. Closed empty chats are ignored.
@@ -108,7 +108,7 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
       .channel(`admin_chat_${selectedChatId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `chat_id=eq.${selectedChatId}` },
+        { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `ticket_id=eq.${selectedChatId}` },
         (payload) => {
           setMessages((prev) => [...prev, payload.new]);
           scrollToBottom();
@@ -137,7 +137,7 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
       const { data, error } = await supabaseClient
         .from('support_messages')
         .select('*')
-        .eq('chat_id', chatId)
+        .eq('ticket_id', chatId)
         .order('created_at', { ascending: true });
       
       if (!error && data) {
@@ -149,7 +149,7 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
           await supabaseClient
             .from('support_messages')
             .update({ is_read: true })
-            .eq('chat_id', chatId)
+            .eq('ticket_id', chatId)
             .neq('sender_id', adminUser.id)
             .eq('is_read', false);
         }
@@ -175,18 +175,18 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
       await supabaseClient
         .from('support_messages')
         .insert({
-          chat_id: selectedChatId,
+          ticket_id: selectedChatId,
           sender_id: adminUser.id,
-          message: messageText
+          message: messageText,
+          is_admin: true
         });
-      await supabaseClient.from('support_chats').update({ updated_at: new Date().toISOString() }).eq('id', selectedChatId);
     } catch (err) { console.error('Error sending message:', err); }
   };
 
   const handleCloseChat = async (chatId: string) => {
     if (!supabaseClient) return;
     try {
-      await supabaseClient.from('support_chats').update({ status: 'closed' }).eq('id', chatId);
+      await supabaseClient.from('support_tickets').update({ status: 'closed' }).eq('id', chatId);
       setChats(prev => prev.map(c => c.id === chatId ? { ...c, status: 'closed' } : c));
       setActiveRightTab('history');
       setViewingHistoryChatId(chatId);
@@ -197,7 +197,7 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
     if (!supabaseClient) return;
     if (!window.confirm('¿Estás seguro de que deseas eliminar este chat? Esta acción es irreversible y borrará todos los mensajes.')) return;
     try {
-      await supabaseClient.from('support_chats').delete().eq('id', chatId);
+      await supabaseClient.from('support_tickets').delete().eq('id', chatId);
       setChats(prev => prev.filter(c => c.id !== chatId));
       if (viewingHistoryChatId === chatId) {
         setViewingHistoryChatId(null);
@@ -208,14 +208,14 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
   const handleCreateNewChatForSelectedUser = async () => {
     if (!selectedUserId || !supabaseClient) return;
     try {
+      const selectedUserProfile = userList.find(u => u.id === selectedUserId) || chats.find(c => c.user_id === selectedUserId)?.profiles;
       const { data: newChat, error } = await supabaseClient
-        .from('support_chats')
-        .insert({ user_id: selectedUserId, status: 'open' })
+        .from('support_tickets')
+        .insert({ user_id: selectedUserId, username: selectedUserProfile?.username || 'Usuario', status: 'open' })
         .select()
         .single();
         
       if (!error && newChat) {
-        const selectedUserProfile = chats.find(c => c.user_id === selectedUserId)?.profiles;
         setChats(prev => [{ ...newChat, profiles: selectedUserProfile, support_messages: [] }, ...prev]);
         setActiveRightTab('current');
       }
@@ -496,12 +496,12 @@ export default function AdminSupportChats({ forceChatUserId, onChatForced }: Adm
                     onClick={async () => {
                       setShowUserModal(false);
                       try {
-                        const { data: existingChats } = await supabaseClient!.from('support_chats').select('*').eq('user_id', u.id).eq('status', 'open').limit(1);
+                        const { data: existingChats } = await supabaseClient!.from('support_tickets').select('*').eq('user_id', u.id).eq('status', 'open').limit(1);
                         if (existingChats && existingChats.length > 0) {
-                          setSelectedUserId(u.id);
-                          setActiveRightTab('current');
+                          setForceChatUserId(u.id);
+                          setShowUserModal(false);
                         } else {
-                          const { data: newChat, error } = await supabaseClient!.from('support_chats').insert({ user_id: u.id, status: 'open' }).select().single();
+                          const { data: newChat, error } = await supabaseClient!.from('support_tickets').insert({ user_id: u.id, username: u.username, status: 'open' }).select().single();
                           if (!error && newChat) {
                             setChats(prev => [{ ...newChat, profiles: u, support_messages: [] }, ...prev]);
                             setSelectedUserId(u.id);

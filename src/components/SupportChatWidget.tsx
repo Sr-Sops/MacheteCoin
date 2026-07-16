@@ -23,12 +23,12 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     if (user && supabaseClient) {
       checkActiveChat();
 
-      // Listen for newly created chats by admin for this user
+      // Listen for newly created tickets by admin for this user
       const chatChannel = supabaseClient
         .channel(`user_chats_${user.id}`)
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'support_chats', filter: `user_id=eq.${user.id}` },
+          { event: 'INSERT', schema: 'public', table: 'support_tickets', filter: `user_id=eq.${user.id}` },
           (payload) => {
             if (payload.new.status === 'open') {
               setChatId(payload.new.id);
@@ -61,7 +61,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       .channel(`chat_${chatId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `chat_id=eq.${chatId}` },
+        { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `ticket_id=eq.${chatId}` },
         (payload) => {
           const newMsg = payload.new as any;
           setMessages((prev) => [...prev, newMsg]);
@@ -87,7 +87,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'support_chats', filter: `id=eq.${chatId}` },
+        { event: 'DELETE', schema: 'public', table: 'support_tickets', filter: `id=eq.${chatId}` },
         () => {
           setChatId(null);
           setMessages([]);
@@ -97,7 +97,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'support_chats', filter: `id=eq.${chatId}` },
+        { event: 'UPDATE', schema: 'public', table: 'support_tickets', filter: `id=eq.${chatId}` },
         (payload) => {
           if (payload.new.status === 'closed') {
             setChatId(null);
@@ -118,7 +118,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     if (!user || !supabaseClient) return;
     try {
       const { data: chatData } = await supabaseClient
-        .from('support_chats')
+        .from('support_tickets')
         .select('id')
         .eq('user_id', user.id)
         .eq('status', 'open')
@@ -140,7 +140,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     const { data: msgData, error: msgError } = await supabaseClient
       .from('support_messages')
       .select('*')
-      .eq('chat_id', activeChatId)
+      .eq('ticket_id', activeChatId)
       .order('created_at', { ascending: true });
 
     if (!msgError && msgData) {
@@ -161,10 +161,11 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
     if (!id || !user || !supabaseClient) return;
     
     setUnreadCount(0);
+    // In support_messages we check if there's an is_read column, but let's safely ignore if not
     await supabaseClient
       .from('support_messages')
       .update({ is_read: true })
-      .eq('chat_id', id)
+      .eq('ticket_id', id)
       .neq('sender_id', user.id)
       .eq('is_read', false);
   };
@@ -188,8 +189,8 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       // Lazily create chat if it doesn't exist
       if (!activeChatId) {
         const { data: newChat, error: newChatError } = await supabaseClient
-          .from('support_chats')
-          .insert({ user_id: user.id, status: 'open' })
+          .from('support_tickets')
+          .insert({ user_id: user.id, username: user.username, status: 'open' })
           .select()
           .single();
           
@@ -201,12 +202,12 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       await supabaseClient
         .from('support_messages')
         .insert({
-          chat_id: activeChatId,
+          ticket_id: activeChatId,
           sender_id: user.id,
-          message: messageText
+          message: messageText,
+          is_admin: false
         });
-      // Updating chat's updated_at
-      await supabaseClient.from('support_chats').update({ updated_at: new Date().toISOString() }).eq('id', activeChatId);
+      // Assuming we don't need updated_at for support_tickets as per new schema
 
       // Send email notification via API
       fetch('/api/notify-chat', {
@@ -231,14 +232,21 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       <div style={{ position: 'fixed', bottom: '4.5rem', right: '2rem', zIndex: 9999 }}>
       
       {isOpen ? (
-        <div className="glass-panel" style={{ 
-          width: '350px', 
+        <div style={{ 
+          width: '100%', 
+          maxWidth: '350px',
           height: '500px', 
+          maxHeight: '80vh',
           display: 'flex', 
           flexDirection: 'column',
-          border: '1px solid rgba(255, 199, 0, 0.2)',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-          overflow: 'hidden'
+          background: '#050a07', // Solid background instead of transparent
+          border: '1px solid rgba(255, 199, 0, 0.4)',
+          borderRadius: '16px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
+          overflow: 'hidden',
+          position: 'absolute',
+          bottom: '80px',
+          right: '0'
         }}>
           {/* Header */}
           <div style={{ 

@@ -82,6 +82,25 @@ DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" 
 ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
+-- Support Tickets Table
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    username TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('open', 'closed')) DEFAULT 'open',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Support Messages Table
+CREATE TABLE IF NOT EXISTS support_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id UUID REFERENCES support_tickets(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    is_admin BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- 2. Coin Settings Table (Editable via Admin Panel)
 CREATE TABLE IF NOT EXISTS public.coin_settings (
     id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1), -- Single row configuration
