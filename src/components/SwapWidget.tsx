@@ -137,9 +137,9 @@ export default function SwapWidget({ settings }: SwapWidgetProps) {
             justifyContent: 'space-between',
             gap: '0.5rem',
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden', flex: 1 }}>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>TX HASH:</span>
-              <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '250px', textAlign: 'left' }}>
+              <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, maxWidth: '100%', textAlign: 'left' }}>
                 {txHash}
               </span>
             </div>
