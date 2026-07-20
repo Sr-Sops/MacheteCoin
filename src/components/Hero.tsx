@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Copy, Check, ExternalLink, MessageCircle, TrendingUp } from 'lucide-react';
 
@@ -20,6 +20,37 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const [mounted, setMounted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+    // 01/08/2026 at 0:00
+    const targetDate = new Date('2026-08-01T00:00:00').getTime();
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000)
+        });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isAddressPlaceholder = contractAddress.startsWith('0x0000000000');
 
   return (
     <section style={{
@@ -94,9 +125,21 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
                       DIRECCIÓN DEL CONTRATO:
                     </span>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                       REVELÁNDOSE EN EL LANZAMIENTO 🚀
                     </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+                      CUENTA ATRÁS DEL LANZAMIENTO:
+                    </span>
+                    {mounted ? (
+                      <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 800, letterSpacing: '0.1em' }}>
+                        {timeLeft.days}d {timeLeft.hours.toString().padStart(2, '0')}h {timeLeft.minutes.toString().padStart(2, '0')}m {timeLeft.seconds.toString().padStart(2, '0')}s
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 800, letterSpacing: '0.1em', opacity: 0 }}>
+                        0d 00h 00m 00s
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <>
