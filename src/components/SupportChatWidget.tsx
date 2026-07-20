@@ -233,8 +233,8 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
       
       {isOpen ? (
         <div style={{ 
-          width: '100%', 
-          maxWidth: '350px',
+          width: '350px', 
+          maxWidth: 'calc(100vw - 3rem)',
           height: '500px', 
           maxHeight: '80vh',
           display: 'flex', 
