@@ -52,6 +52,40 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
 
   const isAddressPlaceholder = contractAddress.startsWith('0x0000000000');
 
+  const renderTimeUnit = (value: number, label: string) => (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(145deg, rgba(20,20,20,0.8) 0%, rgba(5,10,7,0.9) 100%)',
+      border: '1px solid rgba(255, 199, 0, 0.3)',
+      borderRadius: '8px',
+      padding: '0.6rem 0.8rem',
+      minWidth: '65px',
+      boxShadow: '0 4px 10px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,199,0,0.05)'
+    }}>
+      <span style={{
+        fontSize: '1.6rem',
+        fontWeight: 800,
+        color: 'var(--color-gold)',
+        textShadow: '0 0 8px rgba(255, 199, 0, 0.4)',
+        fontFamily: 'monospace',
+        lineHeight: 1
+      }}>
+        {value.toString().padStart(2, '0')}
+      </span>
+      <span style={{
+        fontSize: '0.6rem',
+        fontWeight: 700,
+        color: 'var(--text-secondary)',
+        marginTop: '6px',
+        letterSpacing: '0.1em'
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+
   return (
     <section style={{
       position: 'relative',
@@ -128,17 +162,23 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
                     <span style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                       REVELÁNDOSE EN EL LANZAMIENTO 🚀
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
-                      CUENTA ATRÁS DEL LANZAMIENTO:
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+                      CUENTA ATRÁS DEL LANZAMIENTO
                     </span>
                     {mounted ? (
-                      <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 800, letterSpacing: '0.1em' }}>
-                        {timeLeft.days}d {timeLeft.hours.toString().padStart(2, '0')}h {timeLeft.minutes.toString().padStart(2, '0')}m {timeLeft.seconds.toString().padStart(2, '0')}s
-                      </span>
+                      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                        {renderTimeUnit(timeLeft.days, 'DÍAS')}
+                        {renderTimeUnit(timeLeft.hours, 'HRS')}
+                        {renderTimeUnit(timeLeft.minutes, 'MIN')}
+                        {renderTimeUnit(timeLeft.seconds, 'SEG')}
+                      </div>
                     ) : (
-                      <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 800, letterSpacing: '0.1em', opacity: 0 }}>
-                        0d 00h 00m 00s
-                      </span>
+                      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', opacity: 0 }}>
+                        {renderTimeUnit(0, 'DÍAS')}
+                        {renderTimeUnit(0, 'HRS')}
+                        {renderTimeUnit(0, 'MIN')}
+                        {renderTimeUnit(0, 'SEG')}
+                      </div>
                     )}
                   </div>
                 ) : (
