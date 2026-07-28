@@ -41,10 +41,11 @@ export async function POST(request: Request) {
       `,
     };
 
+    let discordStatus = "not_attempted";
     // Send Discord notification if configured
     if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CHANNEL_ID && ticket_id) {
       try {
-        await fetch(`https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
+        const discordRes = await fetch(`https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
@@ -68,12 +69,19 @@ export async function POST(request: Request) {
             }]
           })
         });
-      } catch (err) {
+        discordStatus = `${discordRes.status} ${discordRes.statusText}`;
+        if (!discordRes.ok) {
+           const errText = await discordRes.text();
+           console.error("Discord error:", errText);
+           discordStatus += ` - ${errText}`;
+        }
+      } catch (err: any) {
         console.error("Error sending to Discord:", err);
+        discordStatus = `Error: ${err.message}`;
       }
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, discordStatus });
   } catch (error: any) {
     console.error('Error sending email notification:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
