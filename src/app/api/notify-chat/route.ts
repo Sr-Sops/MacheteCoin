@@ -16,10 +16,9 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            content: `**Nuevo mensaje de soporte de ${username}:**\n> ${message.substring(0, 500)}${message.length > 500 ? '...' : ''}`,
+            content: `🔔 **Mensaje del chat de soporte de la web**\n\n**Usuario:** ${username}\n**E-mail:** ${email}\n\n**Mensaje:**\n> ${message.substring(0, 1000)}${message.length > 1000 ? '...' : ''}`,
             embeds: [{
               title: `Ticket ID: ${ticket_id}`,
-              description: message,
               color: 16762624 // Hex #ffc700
             }],
             components: [{
