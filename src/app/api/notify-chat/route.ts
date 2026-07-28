@@ -5,11 +5,51 @@ export async function POST(request: Request) {
   try {
     const { ticket_id, username, email, message } = await request.json();
 
+    let discordStatus = "not_attempted";
+    // Send Discord notification if configured
+    if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CHANNEL_ID && ticket_id) {
+      try {
+        const discordRes = await fetch(`https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: `**Nuevo mensaje de soporte de ${username}:**\n> ${message.substring(0, 500)}${message.length > 500 ? '...' : ''}`,
+            embeds: [{
+              title: `Ticket ID: ${ticket_id}`,
+              description: message,
+              color: 16762624 // Hex #ffc700
+            }],
+            components: [{
+              type: 1, // Action Row
+              components: [{
+                type: 2, // Button
+                style: 1, // Primary (blurple)
+                label: "Responder al usuario",
+                custom_id: `reply_${ticket_id}`
+              }]
+            }]
+          })
+        });
+        discordStatus = `${discordRes.status} ${discordRes.statusText}`;
+        if (!discordRes.ok) {
+           const errText = await discordRes.text();
+           console.error("Discord error:", errText);
+           discordStatus += ` - ${errText}`;
+        }
+      } catch (err: any) {
+        console.error("Error sending to Discord:", err);
+        discordStatus = `Error: ${err.message}`;
+      }
+    }
+
     // Check if SMTP is configured
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.warn('⚠️ SMTP variables not configured. Email notification to soporte@machetecoin.es was simulated.');
       console.log(`[SIMULATED EMAIL] New chat message from ${username} (${email}): ${message}`);
-      return NextResponse.json({ success: true, simulated: true });
+      return NextResponse.json({ success: true, simulated: true, discordStatus });
     }
 
     // Configure nodemailer transporter
@@ -41,45 +81,7 @@ export async function POST(request: Request) {
       `,
     };
 
-    let discordStatus = "not_attempted";
-    // Send Discord notification if configured
-    if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CHANNEL_ID && ticket_id) {
-      try {
-        const discordRes = await fetch(`https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            content: `**Nuevo mensaje de soporte de ${username}**`,
-            embeds: [{
-              title: `Ticket ID: ${ticket_id}`,
-              description: message,
-              color: 16762624 // Hex #ffc700
-            }],
-            components: [{
-              type: 1, // Action Row
-              components: [{
-                type: 2, // Button
-                style: 1, // Primary (blurple)
-                label: "Responder al usuario",
-                custom_id: `reply_${ticket_id}`
-              }]
-            }]
-          })
-        });
-        discordStatus = `${discordRes.status} ${discordRes.statusText}`;
-        if (!discordRes.ok) {
-           const errText = await discordRes.text();
-           console.error("Discord error:", errText);
-           discordStatus += ` - ${errText}`;
-        }
-      } catch (err: any) {
-        console.error("Error sending to Discord:", err);
-        discordStatus = `Error: ${err.message}`;
-      }
-    }
+    await transporter.sendMail(mailOptions);
 
     return NextResponse.json({ success: true, discordStatus });
   } catch (error: any) {
