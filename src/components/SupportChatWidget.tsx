@@ -214,6 +214,7 @@ export default function SupportChatWidget({ user }: { user: Profile | null }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ticket_id: activeChatId,
           username: user.username,
           email: user.email,
           message: messageText

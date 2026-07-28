@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
   try {
-    const { username, email, message } = await request.json();
+    const { ticket_id, username, email, message } = await request.json();
 
     // Check if SMTP is configured
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -41,7 +41,37 @@ export async function POST(request: Request) {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    // Send Discord notification if configured
+    if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CHANNEL_ID && ticket_id) {
+      try {
+        await fetch(`https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: `**Nuevo mensaje de soporte de ${username}**`,
+            embeds: [{
+              title: `Ticket ID: ${ticket_id}`,
+              description: message,
+              color: 16762624 // Hex #ffc700
+            }],
+            components: [{
+              type: 1, // Action Row
+              components: [{
+                type: 2, // Button
+                style: 1, // Primary (blurple)
+                label: "Responder al usuario",
+                custom_id: `reply_${ticket_id}`
+              }]
+            }]
+          })
+        });
+      } catch (err) {
+        console.error("Error sending to Discord:", err);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
