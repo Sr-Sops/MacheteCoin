@@ -75,10 +75,9 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
       width: '100%',
       zIndex: 100,
       padding: scrolled ? '0.75rem 0' : '1.25rem 0',
-      background: scrolled ? 'rgba(5, 10, 7, 0.85)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(12px)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(255, 199, 0, 0.15)' : '1px solid transparent',
-      boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
+      background: '#050a07',
+      borderBottom: '1px solid rgba(255, 199, 0, 0.15)',
+      boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.2)',
       transition: 'all 0.3s ease-in-out',
     }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
