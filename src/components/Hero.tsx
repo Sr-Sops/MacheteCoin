@@ -26,8 +26,8 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
 
   useEffect(() => {
     setMounted(true);
-    // 01/08/2026 at 0:00
-    const targetDate = new Date('2026-08-01T00:00:00').getTime();
+    // 16/08/2026 at 0:00
+    const targetDate = new Date('2026-08-16T00:00:00').getTime();
 
     const updateTimer = () => {
       const now = new Date().getTime();
@@ -157,13 +157,13 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
                 {isAddressPlaceholder ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0.25rem 0' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
-                      DIRECCIÓN DEL CONTRATO:
+                      16 de Agosto de 2026
                     </span>
                     <span style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-                      REVELÁNDOSE EN EL LANZAMIENTO 🚀
+                      🚀 LANZAMIENTO OFICIAL DE LA MONEDA 🚀
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
-                      CUENTA ATRÁS DEL LANZAMIENTO
+                    <span style={{ fontSize: '0.8rem', color: 'red', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+                      Comienza la cuenta atrás
                     </span>
                     {mounted ? (
                       <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
