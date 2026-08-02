@@ -75,7 +75,7 @@ export default function Header({ twitterUrl, telegramUrl, discordUrl, instagramU
       width: '100%',
       zIndex: 100,
       padding: scrolled ? '0.75rem 0' : '1.25rem 0',
-      background: '#050a07',
+      background: 'linear-gradient(90deg, #0a2d1a 0%, #050a07 35%)',
       borderBottom: '1px solid rgba(255, 199, 0, 0.15)',
       boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.2)',
       transition: 'all 0.3s ease-in-out',
