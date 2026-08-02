@@ -156,13 +156,13 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
               }}>
                 {isAddressPlaceholder ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0.25rem 0' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '1.2rem', color: 'var(--color-gold)', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
                       16 de Agosto de 2026
                     </span>
                     <span style={{ fontSize: '0.9rem', color: 'var(--color-green-neon)', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                       🚀 LANZAMIENTO OFICIAL DE LA MONEDA 🚀
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: 'red', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#00d2ff', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
                       ¡Comienza la cuenta atrás!
                     </span>
                     {mounted ? (
