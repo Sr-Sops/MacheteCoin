@@ -163,7 +163,7 @@ export default function Hero({ contractAddress, blockchainNetwork, telegramUrl, 
                       🚀 LANZAMIENTO OFICIAL DE LA MONEDA 🚀
                     </span>
                     <span style={{ fontSize: '0.8rem', color: 'red', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
-                      Comienza la cuenta atrás
+                      ¡Comienza la cuenta atrás!
                     </span>
                     {mounted ? (
                       <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
